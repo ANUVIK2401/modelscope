@@ -1,73 +1,103 @@
-import csv
-from pathlib import Path
-from typing import Any
-
+import os, gc, csv, torch, numpy as np
 from tqdm import tqdm
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from datasets import load_dataset
+from rouge_score import rouge_scorer
 
-from eval.consistency import measure_consistency
-from eval.mmlu import load_mmlu_questions, score_mmlu
-from eval.relevance import measure_relevance
-from models.configs import BENCHMARK_PROMPTS, MODEL_REGISTRY
-from models.loader import load_model, unload_model
+os.makedirs("/content/modelscope/results", exist_ok=True)
 
-_CSV_PATH = Path("results/quality_results.csv")
-_CSV_COLUMNS = [
-    "variant",
-    "model",
-    "config",
-    "mmlu_accuracy",
-    "consistency_score",
-    "relevance_score",
+VARIANTS = [
+    {"variant": "llama-fp16", "model_id": "meta-llama/Llama-3.2-3B-Instruct", "quant_config": None},
+    {"variant": "llama-int8", "model_id": "meta-llama/Llama-3.2-3B-Instruct", "quant_config": BitsAndBytesConfig(load_in_8bit=True)},
+    {"variant": "llama-int4", "model_id": "meta-llama/Llama-3.2-3B-Instruct", "quant_config": BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.float16)},
+    {"variant": "llama-int4-nf4", "model_id": "meta-llama/Llama-3.2-3B-Instruct", "quant_config": BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=torch.float16)},
+    {"variant": "gemma-fp16", "model_id": "google/gemma-3-4b-it", "quant_config": None},
+    {"variant": "gemma-int8", "model_id": "google/gemma-3-4b-it", "quant_config": BitsAndBytesConfig(load_in_8bit=True)},
+    {"variant": "gemma-int4", "model_id": "google/gemma-3-4b-it", "quant_config": BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.float16)},
+    {"variant": "gemma-int4-nf4", "model_id": "google/gemma-3-4b-it", "quant_config": BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=torch.float16)},
 ]
 
-_CONSISTENCY_PROMPT = BENCHMARK_PROMPTS[0]
-_RELEVANCE_PROMPT = BENCHMARK_PROMPTS[0]
-# Concise factual reference used as the BERTScore target for the standard prompt.
-_RELEVANCE_REFERENCE = (
-    "The attention mechanism computes query, key, and value projections for each token. "
-    "Scaled dot-product attention scores between queries and keys are softmax-normalized "
-    "to produce weights that blend the value vectors, allowing each position to "
-    "selectively attend to other positions in the sequence."
-)
+CSV_PATH = "/content/modelscope/results/quality_results.csv"
+SUBJECTS = ["abstract_algebra", "anatomy", "astronomy", "computer_security"]
+CONSISTENCY_PROMPT = "What are the key differences between supervised and unsupervised learning?"
 
+def get_already_done():
+    if not os.path.exists(CSV_PATH):
+        return []
+    with open(CSV_PATH) as f:
+        return [row["variant"] for row in csv.DictReader(f)]
 
-def _append_row(row: dict[str, Any]) -> None:
-    _CSV_PATH.parent.mkdir(parents=True, exist_ok=True)
-    write_header = not _CSV_PATH.exists()
-    with _CSV_PATH.open("a", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=_CSV_COLUMNS)
-        if write_header:
+def write_row(row):
+    file_exists = os.path.exists(CSV_PATH)
+    with open(CSV_PATH, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=row.keys())
+        if not file_exists:
             writer.writeheader()
         writer.writerow(row)
 
+def load_mmlu():
+    questions = []
+    for subject in SUBJECTS:
+        ds = load_dataset("cais/mmlu", subject, split="test")
+        for item in ds.select(range(min(25, len(ds)))):
+            questions.append({"question": item["question"], "choices": item["choices"], "answer": item["answer"]})
+    print("Loaded " + str(len(questions)) + " questions from " + str(len(SUBJECTS)) + " subjects")
+    return questions
 
-def run_full_eval() -> None:
-    questions = load_mmlu_questions()
-    tqdm.write(f"Loaded {len(questions)} MMLU questions across {len(set(q['subject'] for q in questions))} subjects")
+def score_mmlu(model, tokenizer, questions):
+    correct = 0
+    for q in tqdm(questions, desc="MMLU"):
+        prompt = "Question: " + q["question"] + "\nA: " + q["choices"][0] + "\nB: " + q["choices"][1] + "\nC: " + q["choices"][2] + "\nD: " + q["choices"][3] + "\nAnswer with A, B, C, or D only:"
+        inputs = tokenizer(prompt, return_tensors="pt").to("cuda")
+        with torch.no_grad():
+            outputs = model.generate(**inputs, max_new_tokens=5, do_sample=False, pad_token_id=tokenizer.eos_token_id)
+        decoded = tokenizer.decode(outputs[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True).strip()
+        pred = decoded[0].upper() if decoded else "X"
+        if pred == ["A","B","C","D"][q["answer"]]:
+            correct += 1
+    return round(correct / len(questions), 4)
 
-    for variant_key in tqdm(MODEL_REGISTRY, desc="eval", unit="variant"):
-        model_name, config_name = variant_key.split("_", 1)
+def score_consistency(model, tokenizer):
+    inputs = tokenizer(CONSISTENCY_PROMPT, return_tensors="pt").to("cuda")
+    outputs_list = []
+    for _ in tqdm(range(5), desc="Consistency"):
+        with torch.no_grad():
+            out = model.generate(**inputs, max_new_tokens=100, do_sample=True, temperature=0.7, pad_token_id=tokenizer.eos_token_id)
+        outputs_list.append(tokenizer.decode(out[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True))
+    scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=True)
+    scores = [scorer.score(outputs_list[i], outputs_list[j])["rougeL"].fmeasure
+              for i in range(len(outputs_list)) for j in range(i+1, len(outputs_list))]
+    return round(float(np.mean(scores)), 4)
 
-        model, tokenizer, _metadata = load_model(variant_key)
+def load_model(v):
+    kwargs = {"device_map": "auto", "torch_dtype": torch.float16}
+    if v["quant_config"]:
+        kwargs["quantization_config"] = v["quant_config"]
+        del kwargs["torch_dtype"]
+    return AutoModelForCausalLM.from_pretrained(v["model_id"], **kwargs), AutoTokenizer.from_pretrained(v["model_id"])
 
-        mmlu_accuracy = score_mmlu(model, tokenizer, questions)
-        consistency = measure_consistency(model, tokenizer, _CONSISTENCY_PROMPT)
-        relevance = measure_relevance(model, tokenizer, _RELEVANCE_PROMPT, _RELEVANCE_REFERENCE)
+print("Loading MMLU questions...")
+questions = load_mmlu()
 
-        unload_model(model)
+already_done = get_already_done()
+print("Already completed: " + str(already_done))
 
-        row: dict[str, Any] = {
-            "variant": variant_key,
-            "model": model_name,
-            "config": config_name,
-            "mmlu_accuracy": round(mmlu_accuracy, 4),
-            "consistency_score": round(consistency, 4),
-            "relevance_score": round(relevance, 4),
-        }
-        _append_row(row)
+for v in tqdm(VARIANTS, desc="Overall Eval Progress"):
+    if v["variant"] in already_done:
+        print("Skipping " + v["variant"])
+        continue
+    try:
+        print("Evaluating " + v["variant"] + "...")
+        model, tokenizer = load_model(v)
+        mmlu_acc = score_mmlu(model, tokenizer, questions)
+        consistency = score_consistency(model, tokenizer)
+        write_row({"variant": v["variant"], "model_id": v["model_id"], "mmlu_accuracy": mmlu_acc, "consistency_score": consistency})
+        print("Saved: " + v["variant"] + " | MMLU: " + str(mmlu_acc) + " | Consistency: " + str(consistency))
+        del model
+        gc.collect()
+        torch.cuda.empty_cache()
+    except Exception as e:
+        print("ERROR on " + v["variant"] + ": " + str(e))
+        continue
 
-        tqdm.write(
-            f"  {variant_key}: mmlu={row['mmlu_accuracy']:.3f} "
-            f"consistency={row['consistency_score']:.3f} "
-            f"relevance={row['relevance_score']:.3f}"
-        )
+print("All evals complete!")

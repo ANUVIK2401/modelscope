@@ -1,70 +1,106 @@
-import csv
-from pathlib import Path
-from typing import Any
-
+import os, gc, csv, time, torch, numpy as np
 from tqdm import tqdm
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
-from benchmarks.latency import measure_latency
-from benchmarks.throughput import measure_throughput
-from models.configs import BATCH_SIZES, BENCHMARK_PROMPTS, MODEL_REGISTRY
-from models.loader import load_model, unload_model
+os.makedirs("/content/modelscope/results", exist_ok=True)
 
-_CSV_PATH = Path("results/benchmark_results.csv")
-_CSV_COLUMNS = [
-    "variant",
-    "model",
-    "config",
-    "memory_mb",
-    "ttft_p50_ms",
-    "ttft_p95_ms",
-    "tokens_per_sec_batch1",
-    "tokens_per_sec_batch4",
-    "tokens_per_sec_batch16",
-    "tokens_per_sec_batch32",
+VARIANTS = [
+    {"variant": "llama-fp16", "model_id": "meta-llama/Llama-3.2-3B-Instruct", "quant_config": None},
+    {"variant": "llama-int8", "model_id": "meta-llama/Llama-3.2-3B-Instruct", "quant_config": BitsAndBytesConfig(load_in_8bit=True)},
+    {"variant": "llama-int4", "model_id": "meta-llama/Llama-3.2-3B-Instruct", "quant_config": BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.float16)},
+    {"variant": "llama-int4-nf4", "model_id": "meta-llama/Llama-3.2-3B-Instruct", "quant_config": BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=torch.float16)},
+    {"variant": "gemma-fp16", "model_id": "google/gemma-3-4b-it", "quant_config": None},
+    {"variant": "gemma-int8", "model_id": "google/gemma-3-4b-it", "quant_config": BitsAndBytesConfig(load_in_8bit=True)},
+    {"variant": "gemma-int4", "model_id": "google/gemma-3-4b-it", "quant_config": BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.float16)},
+    {"variant": "gemma-int4-nf4", "model_id": "google/gemma-3-4b-it", "quant_config": BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=torch.float16)},
 ]
 
+PROMPT = "Explain the attention mechanism in transformers in detail."
+MAX_NEW_TOKENS = 100
+RUNS = 5
+CSV_PATH = "/content/modelscope/results/benchmark_results.csv"
 
-def _append_row(row: dict[str, Any]) -> None:
-    _CSV_PATH.parent.mkdir(parents=True, exist_ok=True)
-    write_header = not _CSV_PATH.exists()
-    with _CSV_PATH.open("a", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=_CSV_COLUMNS)
-        if write_header:
+def get_already_done():
+    if not os.path.exists(CSV_PATH):
+        return []
+    with open(CSV_PATH) as f:
+        return [row["variant"] for row in csv.DictReader(f)]
+
+def write_row(row):
+    file_exists = os.path.exists(CSV_PATH)
+    with open(CSV_PATH, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=row.keys())
+        if not file_exists:
             writer.writeheader()
         writer.writerow(row)
 
+def measure_variant(v):
+    print("=" * 50)
+    print("Loading " + v["variant"] + "...")
+    torch.cuda.reset_peak_memory_stats()
+    mem_before = torch.cuda.memory_allocated() / (1024**2)
+    t_load = time.time()
 
-def run_all_benchmarks() -> None:
-    prompt = BENCHMARK_PROMPTS[0]
+    kwargs = {"device_map": "auto", "torch_dtype": torch.float16}
+    if v["quant_config"]:
+        kwargs["quantization_config"] = v["quant_config"]
+        del kwargs["torch_dtype"]
 
-    for variant_key in tqdm(MODEL_REGISTRY, desc="variants", unit="variant"):
-        # "llama_fp16" → model_name="llama", config_name="fp16"
-        # "llama_int4_nf4" → model_name="llama", config_name="int4_nf4"
-        model_name, config_name = variant_key.split("_", 1)
+    model = AutoModelForCausalLM.from_pretrained(v["model_id"], **kwargs)
+    tokenizer = AutoTokenizer.from_pretrained(v["model_id"])
+    load_time = time.time() - t_load
+    memory_mb = round((torch.cuda.max_memory_allocated() / (1024**2)) - mem_before, 1)
+    print("Loaded in " + str(round(load_time,1)) + "s | Memory: " + str(memory_mb) + "MB")
 
-        model, tokenizer, metadata = load_model(variant_key)
+    inputs = tokenizer(PROMPT, return_tensors="pt").to("cuda")
+    ttft_list, tps_list = [], []
 
-        latency = measure_latency(model, tokenizer, prompt)
-        throughput = measure_throughput(model, tokenizer, BATCH_SIZES)
+    print("Running " + str(RUNS) + " benchmark iterations...")
+    for _ in tqdm(range(RUNS)):
+        torch.cuda.synchronize()
+        t_start = time.perf_counter()
+        with torch.no_grad():
+            outputs = model.generate(
+                **inputs,
+                max_new_tokens=MAX_NEW_TOKENS,
+                do_sample=False,
+                pad_token_id=tokenizer.eos_token_id
+            )
+        torch.cuda.synchronize()
+        t_end = time.perf_counter()
+        n_tokens = outputs.shape[1] - inputs["input_ids"].shape[1]
+        total_time = t_end - t_start
+        ttft_list.append((total_time / max(n_tokens, 1)) * 1000)
+        tps_list.append(n_tokens / total_time)
 
-        unload_model(model)
+    result = {
+        "variant": v["variant"],
+        "model_id": v["model_id"],
+        "memory_mb": memory_mb,
+        "load_time_s": round(load_time, 2),
+        "ttft_p50_ms": round(float(np.percentile(ttft_list, 50)), 2),
+        "ttft_p95_ms": round(float(np.percentile(ttft_list, 95)), 2),
+        "tokens_per_sec": round(float(np.mean(tps_list)), 2),
+    }
+    print("Result: " + str(result))
+    del model
+    gc.collect()
+    torch.cuda.empty_cache()
+    return result
 
-        row: dict[str, Any] = {
-            "variant": variant_key,
-            "model": model_name,
-            "config": config_name,
-            "memory_mb": metadata["memory_delta_mb"],
-            "ttft_p50_ms": latency["ttft_p50_ms"],
-            "ttft_p95_ms": latency["ttft_p95_ms"],
-            "tokens_per_sec_batch1": throughput.get(1),
-            "tokens_per_sec_batch4": throughput.get(4),
-            "tokens_per_sec_batch16": throughput.get(16),
-            "tokens_per_sec_batch32": throughput.get(32),
-        }
-        _append_row(row)
+already_done = get_already_done()
+print("Already completed: " + str(already_done))
 
-        tqdm.write(
-            f"  {variant_key}: memory={row['memory_mb']}MB "
-            f"ttft_p50={row['ttft_p50_ms']}ms "
-            f"tps_b1={row['tokens_per_sec_batch1']}"
-        )
+for v in tqdm(VARIANTS, desc="Overall Progress"):
+    if v["variant"] in already_done:
+        print("Skipping " + v["variant"] + " - already done")
+        continue
+    try:
+        row = measure_variant(v)
+        write_row(row)
+        print("Saved: " + v["variant"])
+    except Exception as e:
+        print("ERROR on " + v["variant"] + ": " + str(e))
+        continue
+
+print("All benchmarks complete!")
