@@ -1,0 +1,13 @@
+transformers
+bitsandbytes
+torch
+accelerate
+fastapi
+uvicorn
+prometheus-client
+sentence-transformers
+datasets
+rouge-score
+matplotlib
+pandas
+tqdm
