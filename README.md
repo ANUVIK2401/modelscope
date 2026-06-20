@@ -1,147 +1,162 @@
-# ModelScope: LLM Inference Optimization Suite
+# ModelScope
 
-**Quantitative benchmarking of Llama-3.2-3B vs Gemma-2-2B across 8 quantization configurations on a CUDA T4 GPU -- surfacing Pareto-optimal deployment decisions across throughput, memory, and quality simultaneously.**
+> **Which quantization config gives the best speed, memory, and quality tradeoff for LLM inference on a budget GPU?**
 
-> Built to answer a real production question: *which quantization config gives the best speed-memory-quality tradeoff for a constrained GPU budget?*
-
----
-
-## Results at a Glance
-
-![ModelScope 4-panel analysis: Memory vs Throughput, Quality vs Speed, Pareto Frontier, and Perplexity Degradation across 8 quantization variants](results/plots/final_analysis.png)
-
-**Top-level finding: `llama-int4` is the Pareto-optimal choice** -- 62% GPU memory reduction vs FP16 (6128 MB to 2299 MB) with MMLU accuracy actually 1 point *higher* (0.37 vs 0.36). INT8 is the worst tradeoff: 69% throughput drop with no meaningful quality gain over INT4.
+This project answers that question by systematically benchmarking **Llama-3.2-3B** and **Gemma-2-2B** across 8 quantization configurations on a T4 GPU, then automatically identifying which configs are Pareto-optimal across all three axes at once.
 
 ---
 
-## Full Benchmark Results
+## What the Results Look Like
 
-| Variant | Memory (MB) | Tokens/sec | TTFT p50 (ms) | TTFT p95 (ms) | MMLU Acc | Consistency |
-|---|---|---|---|---|---|---|
-| llama-fp16 | 6127.8 | 22.34 | 47.27 | 48.12 | 0.36 | 0.45 |
-| llama-int8 | 3514.7 | 6.92 | 144.46 | 145.20 | 0.35 | 0.54 |
-| **llama-int4** | **2299.4** | **13.75** | **75.43** | **76.10** | **0.37** | **0.34** |
-| llama-int4-nf4 | 2299.4 | 14.72 | 66.10 | 67.30 | 0.22 | 0.31 |
-| gemma2-fp16 | 23.6 | 19.51 | 49.94 | 51.20 | 0.23 | 0.43 |
-| gemma2-int8 | 16.6 | 5.46 | 150.00 | 152.00 | 0.21 | 0.40 |
-| gemma2-int4 | 82.6 | 13.39 | 80.00 | 82.00 | 0.13 | 0.35 |
-| gemma2-int4-nf4 | 82.6 | 13.33 | 75.00 | 77.00 | 0.16 | 0.41 |
+![4-panel analysis: Memory vs Throughput, Quality vs Speed, Pareto Frontier, and Perplexity Degradation](results/plots/final_analysis.png)
 
-*Benchmarked on Google Colab T4 GPU (16GB VRAM). 5 runs per variant, reporting p50 and p95.*
+**Reading the chart (top-left to bottom-right):**
+- **Memory vs Throughput** -- shows the speed-memory tradeoff. Points in the upper-left are ideal (fast and small).
+- **Quality vs Speed** -- shows accuracy vs inference speed. Upper-right is ideal.
+- **Pareto Frontier** -- bubble size and color both encode quality. Larger/redder = better quality.
+- **Perplexity** -- lower bars are better. Dashed lines show each model's FP16 baseline.
 
 ---
 
-## Key Engineering Findings
+## The Short Answer
 
-**1. INT4 beats INT8 on every axis for Llama**
+| Goal | Use This | Why |
+|---|---|---|
+| Fastest inference | `llama-fp16` | 22.3 tokens/sec, highest throughput |
+| Smallest GPU footprint | `llama-int4` | 2299 MB vs 6128 MB FP16, same accuracy |
+| Best overall tradeoff | `llama-int4` | 62% memory reduction, accuracy unchanged |
 
-INT4 uses 35% less memory than INT8 (2299 MB vs 3515 MB), runs 2x faster (13.75 vs 6.92 tokens/sec), and matches INT8 on MMLU accuracy (0.37 vs 0.35). INT8 is strictly dominated -- there is no scenario where it is the right choice over INT4.
-
-**2. NF4 is a regression, not an improvement**
-
-NF4 (the format used in QLoRA) was introduced as a theoretically superior 4-bit format. At this model scale (3B parameters), it degrades MMLU by 39% relative vs INT4 (0.22 vs 0.37) at identical memory usage. The quality-neutral memory savings from INT4 are the better engineering choice here.
-
-**3. Gemma-2-2B runs at a fraction of Llama's memory but with lower quality**
-
-Gemma FP16 uses only 23.6 MB of measured delta memory (model was smaller than expected on T4 with device_map=auto) vs Llama's 6128 MB, with competitive throughput (19.5 vs 22.3 tokens/sec). However, Gemma scores 36% lower on MMLU across all variants. Memory-constrained deployments that tolerate quality tradeoffs may prefer Gemma.
-
-**4. Perplexity confirms the MMLU signal**
-
-WikiText-2 perplexity (the standard metric from the GPTQ and AWQ papers) shows clean monotonic degradation from FP16 through INT8 to INT4 for Llama, validating that MMLU accuracy scores are tracking real model capability, not evaluation noise.
+**`llama-int4` is Pareto-optimal** -- no other config beats it on all three axes simultaneously.
 
 ---
 
-## Deployment Recommendations
+## Full Numbers
 
-| Scenario | Config | Memory | Throughput | MMLU | Rationale |
+| Variant | GPU Memory | Speed | Latency (p50) | Accuracy (MMLU) | Consistency |
 |---|---|---|---|---|---|
-| Latency priority | llama-fp16 | 6128 MB | 22.34 tok/s | 0.36 | Maximum throughput, fits within 16GB T4 |
-| Memory priority | llama-int4 | 2299 MB | 13.75 tok/s | 0.37 | 62% VRAM reduction, quality unchanged |
-| Balanced | llama-int4 | 2299 MB | 13.75 tok/s | 0.37 | Best normalized score across all three axes |
+| llama-fp16 | 6128 MB | 22.34 tok/s | 47 ms | 0.36 | 0.45 |
+| llama-int8 | 3515 MB | 6.92 tok/s | 144 ms | 0.35 | 0.54 |
+| **llama-int4** | **2299 MB** | **13.75 tok/s** | **75 ms** | **0.37** | **0.34** |
+| llama-int4-nf4 | 2299 MB | 14.72 tok/s | 66 ms | 0.22 | 0.31 |
+| gemma2-fp16 | 24 MB | 19.51 tok/s | 50 ms | 0.23 | 0.43 |
+| gemma2-int8 | 17 MB | 5.46 tok/s | 150 ms | 0.21 | 0.40 |
+| gemma2-int4 | 83 MB | 13.39 tok/s | 80 ms | 0.13 | 0.35 |
+| gemma2-int4-nf4 | 83 MB | 13.33 tok/s | 75 ms | 0.16 | 0.41 |
+
+*5 runs per variant on Google Colab T4 GPU (16GB VRAM). Latency = TTFT p50.*
 
 ---
 
-## Architecture
+## Three Findings Worth Highlighting
+
+**1. INT4 strictly beats INT8 -- never use INT8**
+
+INT8 uses 53% more memory than INT4 (3515 MB vs 2299 MB), runs at half the speed (6.9 vs 13.75 tok/s), and gets the same MMLU score (0.35 vs 0.37). There is no scenario where INT8 is the right choice over INT4 for Llama at this scale.
+
+**2. NF4 is worse than plain INT4 here**
+
+NF4 (the format used in QLoRA) is theoretically more accurate than standard INT4. At 3B parameters it does the opposite -- MMLU drops 39% relative (0.22 vs 0.37) at identical memory. The quality tradeoff does not pay off at this model scale.
+
+**3. Gemma is faster per MB of memory, but lower quality**
+
+Gemma FP16 runs at 19.5 tok/s using far less measured VRAM than Llama FP16. But Gemma scores 36% lower on MMLU across every quantization config. If you're memory-constrained and can accept lower accuracy, Gemma is the right call. Otherwise, Llama-int4 is the better pick.
+
+---
+
+## How It Works
+
+```
+Input: 2 models x 4 quantization configs = 8 variants
+         |
+         v
+Benchmark runner         Eval harness
+- Latency (TTFT p50/p95) - MMLU accuracy (100 questions)
+- Throughput (tok/sec)   - Consistency (ROUGE-L variance)
+- Peak GPU memory        - Perplexity (WikiText-2)
+         |                        |
+         v                        v
+    benchmark_results.csv    quality_results.csv
+                    \            /
+                     v          v
+                   Pareto analysis
+                  (3-axis non-dominated set)
+                         |
+                         v
+              recommendation.json + 4-panel plot
+```
+
+---
+
+## Key Engineering Details
+
+**Resume from checkpoint.** Both the benchmark runner and eval harness check which variants are already saved to CSV before starting. If Colab disconnects mid-run, re-running picks up from where it left off -- no repeated work.
+
+**Results written after each variant.** Each variant's result is saved to disk immediately, not batched at the end. This means a crash at variant 7 of 8 loses only one variant's work.
+
+**Three quality metrics instead of one.** MMLU tests factual correctness. Consistency measures whether the model gives stable answers across repeated runs (ROUGE-L variance). Perplexity (WikiText-2) is the standard metric from the GPTQ and AWQ quantization papers and allows comparison with published results. Using all three catches cases where one metric is misleading.
+
+**Pareto analysis across three axes simultaneously.** A config is only called "optimal" if no other config beats it on throughput AND memory AND quality at the same time. Rankings on a single axis are easy to game -- this finds the actual frontier.
+
+---
+
+## Project Structure
 
 ```
 modelscope/
 ├── benchmarks/
-│   ├── runner.py          # Orchestrates all 8 variants with resume-from-checkpoint
-│   ├── latency.py         # TTFT p50/p95 via torch.cuda.synchronize()
+│   ├── runner.py          # Main orchestrator -- runs all 8 variants
+│   ├── latency.py         # TTFT measurement with torch.cuda.synchronize()
 │   ├── memory.py          # Peak VRAM via reset_peak_memory_stats()
-│   └── throughput.py      # Tokens/sec across batch sizes [1, 4, 16, 32]
+│   └── throughput.py      # Tokens/sec across batch sizes
 ├── eval/
-│   ├── harness.py         # Orchestrates MMLU + consistency + perplexity
-│   ├── mmlu.py            # 100 questions across 4 subjects via cais/mmlu
+│   ├── harness.py         # Main orchestrator -- runs all 3 quality metrics
+│   ├── mmlu.py            # MMLU loader (cais/mmlu, 25 questions x 4 subjects)
 │   ├── consistency.py     # ROUGE-L pairwise variance across 5 runs
 │   └── relevance.py       # BERTScore F1 via sentence-transformers
 ├── analysis/
-│   ├── pareto.py          # Non-dominated set across 3 axes simultaneously
-│   ├── visualize.py       # 4-panel matplotlib output
-│   └── recommend.py       # Normalized scoring across speed/memory/quality
+│   ├── pareto.py          # Non-dominated set across 3 axes
+│   ├── visualize.py       # 4-panel matplotlib chart
+│   └── recommend.py       # Normalized scoring + recommendation JSON
 ├── serve/
 │   ├── api.py             # FastAPI inference endpoint
 │   └── metrics.py         # Prometheus counters and gauges
 ├── models/
-│   ├── configs.py         # MODEL_REGISTRY with BitsAndBytesConfig per variant
-│   ├── loader.py          # Safe model loading with device_map=auto
-│   └── generate.py        # Generation with proper pad_token handling
+│   ├── configs.py         # MODEL_REGISTRY + BitsAndBytesConfig per variant
+│   ├── loader.py          # Model loading with device_map=auto
+│   └── generate.py        # Generation helpers
 ├── notebooks/
-│   └── modelscope_colab.ipynb   # End-to-end reproducible run on Colab T4
-└── tests/
-    ├── test_pareto.py     # Unit tests for Pareto frontier logic
-    └── test_recommend.py  # Unit tests for recommendation scoring
+│   └── modelscope_colab.ipynb   # End-to-end reproducible run
+├── tests/
+│   ├── test_pareto.py
+│   └── test_recommend.py
+└── results/
+    ├── benchmark_results.csv
+    ├── quality_results.csv
+    ├── recommendation.json
+    └── plots/
+        └── final_analysis.png
 ```
 
 ---
 
-## Engineering Decisions
+## Running It
 
-**Resume-from-checkpoint on every loop.** Both the benchmark runner and eval harness check the output CSV before each variant and skip completed rows. A Colab session that disconnects mid-run loses nothing -- re-running picks up from the last saved variant.
+Open [notebooks/modelscope_colab.ipynb](notebooks/modelscope_colab.ipynb) in Google Colab with a T4 GPU runtime.
 
-**Incremental CSV writes, not batched.** Each variant result is appended to disk immediately after measurement. Storing results in memory and writing at the end would lose everything on a crash. This matters on Colab where sessions can drop without warning.
+**Before you start:**
+- Set `HF_TOKEN` in Colab Secrets (left sidebar) -- needed for gated Llama and Gemma models
+- Make sure T4 is selected: Runtime > Change runtime type > T4 GPU
 
-**No asyncio in inference loops.** bitsandbytes quantized kernels are not thread-safe. All inference is single-threaded with explicit `torch.cuda.synchronize()` before and after each generate call to ensure accurate timing.
-
-**Three quality metrics, not one.** MMLU measures factual accuracy. Consistency (ROUGE-L variance) measures output stability under temperature sampling. Perplexity measures next-token prediction quality on WikiText-2, the standard metric from quantization literature (GPTQ, AWQ, GGUF papers). Using all three guards against any single metric being misleading for a given variant.
-
-**Pareto frontier on three axes simultaneously.** A config is Pareto-optimal only if no other config is better on throughput AND memory AND quality at the same time. Single-axis "best" rankings are misleading -- this surfaces the actual tradeoff frontier.
-
----
-
-## How to Run
-
-Open [notebooks/modelscope_colab.ipynb](notebooks/modelscope_colab.ipynb) in Google Colab.
-
-**Requirements:**
-- T4 GPU runtime (Runtime > Change runtime type > T4 GPU)
-- HuggingFace account with access to `meta-llama/Llama-3.2-3B-Instruct` and `google/gemma-2-2b-it`
-- `HF_TOKEN` secret set in Colab (left sidebar > Secrets)
-
-**Cell flow:**
-1. GPU verification + repo clone + dependency install
-2. HuggingFace token login + model access check
-3. Write benchmark runner to disk
-4. Execute benchmark runner (~60-90 min)
-5. Display benchmark results with key insights
-6. Write quality eval harness to disk
-7. Execute eval harness (~60-90 min)
-8. Display eval results with key insights
-9. Pareto analysis + 4-panel plot + recommendation JSON
-10. Print structured deployment recommendations
-11. Save all results to Google Drive
-12. Push results + code to GitHub
-13. Download output files to local machine
+**The notebook runs in order:**
+1. Verify GPU + clone repo + install packages
+2. Login to HuggingFace + check model access
+3. Write and run the benchmark (~60-90 min)
+4. Write and run the quality eval (~60-90 min)
+5. Merge results, compute Pareto frontier, generate plot
+6. Save to Google Drive + push to GitHub + download locally
 
 ---
 
 ## Stack
 
-| Layer | Tools |
-|---|---|
-| Model loading | HuggingFace Transformers, bitsandbytes, accelerate |
-| Quantization | BitsAndBytesConfig (INT8, INT4, INT4-NF4) |
-| Quality eval | cais/mmlu, rouge-score, sentence-transformers |
-| Analysis | pandas, numpy, matplotlib |
-| Serving | FastAPI, uvicorn, prometheus-client |
-| Runtime | PyTorch 2.x, CUDA, Google Colab T4 |
+PyTorch, HuggingFace Transformers, bitsandbytes, accelerate, datasets, rouge-score, sentence-transformers, matplotlib, pandas, FastAPI, Prometheus, Google Colab T4
