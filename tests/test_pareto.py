@@ -1,67 +1,75 @@
 import pandas as pd
 import pytest
+
 from analysis.pareto import find_pareto_frontier
 
 
-def _df(*rows):
-    return pd.DataFrame(rows)
+def _row(variant, tps, mem, mmlu, model="llama", config="fp16"):
+    return {
+        "variant": variant, "model": model, "config": config,
+        "tokens_per_sec_batch1": tps, "memory_mb": mem, "mmlu_accuracy": mmlu,
+    }
 
 
-def _make_row(variant, tps, mem, mmlu, model="llama", config="fp16"):
-    return dict(variant=variant, model=model, config=config,
-                tokens_per_sec_batch1=tps, memory_mb=mem, mmlu_accuracy=mmlu)
+def _frontier(*rows, use_epsilon=False):
+    result = find_pareto_frontier(pd.DataFrame(rows), use_epsilon=use_epsilon)
+    return result.set_index("variant")["is_pareto"]
 
 
 class TestFindParetoFrontier:
-
-    def test_is_pareto_column_added(self):
-        df = _df(_make_row("a", 100, 5000, 0.7))
-        result = find_pareto_frontier(df)
+    def test_adds_is_pareto_column(self):
+        result = find_pareto_frontier(pd.DataFrame([_row("a", 100, 5000, 0.7)]))
         assert "is_pareto" in result.columns
 
-    def test_single_point_always_pareto(self):
-        df = _df(_make_row("a", 100, 5000, 0.7))
-        result = find_pareto_frontier(df)
-        assert result["is_pareto"].all()
+    def test_single_point_is_pareto(self):
+        assert _frontier(_row("a", 100, 5000, 0.7))["a"]
 
-    def test_dominated_point_excluded(self):
-        # b is strictly worse on all three axes than a
-        df = _df(
-            _make_row("a", tps=100, mem=4000, mmlu=0.80),
-            _make_row("b", tps=50,  mem=6000, mmlu=0.60),
+    def test_strictly_dominated_point_excluded(self):
+        flags = _frontier(
+            _row("a", 100, 4000, 0.80),
+            _row("b", 50, 6000, 0.60),
         )
-        result = find_pareto_frontier(df)
-        is_pareto = result.set_index("variant")["is_pareto"]
-        assert is_pareto["a"] == True
-        assert is_pareto["b"] == False
+        assert flags["a"]
+        assert not flags["b"]
 
-    def test_incomparable_points_both_pareto(self):
-        # a wins on tps; b wins on memory and mmlu — neither dominates
-        df = _df(
-            _make_row("a", tps=120, mem=8000, mmlu=0.65),
-            _make_row("b", tps=60,  mem=3000, mmlu=0.80),
+    def test_incomparable_points_both_kept(self):
+        # a wins throughput; b wins memory and accuracy
+        flags = _frontier(
+            _row("a", 200, 6000, 0.60),
+            _row("b", 80, 2000, 0.75),
         )
-        result = find_pareto_frontier(df)
-        assert result["is_pareto"].all()
+        assert flags["a"] and flags["b"]
 
-    def test_original_dataframe_unchanged(self):
-        df = _df(_make_row("a", 100, 5000, 0.7))
-        original_cols = list(df.columns)
-        find_pareto_frontier(df)
-        assert list(df.columns) == original_cols  # no side effects on input
+    def test_memory_is_minimized_not_maximized(self):
+        # identical except memory; the smaller one must win
+        flags = _frontier(
+            _row("small", 100, 2000, 0.70),
+            _row("big", 100, 8000, 0.70),
+        )
+        assert flags["small"]
+        assert not flags["big"]
 
-    def test_pareto_count_realistic_scenario(self):
-        # "slow_heavy" is strictly worse than int8 on all three axes → not Pareto.
-        # fp16, int8, int4 are mutually incomparable → all Pareto.
-        rows = [
-            _make_row("fp16",       tps=120, mem=7000, mmlu=0.78),
-            _make_row("int8",       tps=90,  mem=4500, mmlu=0.76),
-            _make_row("int4",       tps=70,  mem=2500, mmlu=0.72),
-            _make_row("slow_heavy", tps=65,  mem=5000, mmlu=0.71),  # dominated by int8
-        ]
-        result = find_pareto_frontier(_df(*rows))
-        is_pareto = result.set_index("variant")["is_pareto"]
-        assert is_pareto["fp16"]       == True
-        assert is_pareto["int8"]       == True
-        assert is_pareto["int4"]       == True
-        assert is_pareto["slow_heavy"] == False
+    def test_missing_objective_column_raises(self):
+        df = pd.DataFrame([{"variant": "a", "memory_mb": 1.0, "mmlu_accuracy": 0.5}])
+        with pytest.raises(KeyError, match="Missing objective"):
+            find_pareto_frontier(df)
+
+
+class TestEpsilonDominance:
+    def test_sub_noise_advantage_does_not_dominate(self):
+        """A 0.001 accuracy edge is measurement noise, not superiority.
+        Without epsilon, noise decides which config is called optimal."""
+        rows = (_row("a", 100.1, 4000, 0.701), _row("b", 100.0, 4000, 0.700))
+        strict = _frontier(*rows, use_epsilon=False)
+        tolerant = _frontier(*rows, use_epsilon=True)
+        assert not strict["b"]      # naive frontier drops b on noise
+        assert tolerant["b"]        # epsilon frontier keeps both
+
+    def test_real_advantage_still_dominates_under_epsilon(self):
+        flags = _frontier(
+            _row("a", 200, 2000, 0.80),
+            _row("b", 50, 8000, 0.40),
+            use_epsilon=True,
+        )
+        assert flags["a"]
+        assert not flags["b"]

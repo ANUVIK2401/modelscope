@@ -1,95 +1,151 @@
-import os, gc, csv, time, torch, numpy as np
+"""Benchmark orchestrator: one implementation, imported everywhere.
+
+Replaces the previous Colab script that was written to disk as a string literal
+from a notebook cell. That path was untested, used hardcoded /content paths, and
+produced every published number -- including the mislabelled TTFT column and the
+24 MB reading for a 2B model. The notebook now imports this module.
+
+Failure policy: a variant that raises records a row with `status="failed"` and
+the error text, rather than being silently skipped. The previous
+`except Exception: continue` left no trace, so the resume logic re-ran failures
+forever and the Pareto analysis silently ran over a subset.
+"""
+
+import argparse
+import csv
+import json
+import traceback
+from pathlib import Path
+from typing import Any
+
 from tqdm import tqdm
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
-os.makedirs("/content/modelscope/results", exist_ok=True)
+from analysis.paths import BENCHMARK_CSV, ENV_JSON, ensure_results_dir
+from benchmarks.latency import measure_latency
+from benchmarks.throughput import measure_throughput
+from models.configs import (
+    ALL_VARIANTS,
+    BATCH_SIZES,
+    BENCHMARK_PROMPTS,
+    MODEL_REGISTRY,
+)
+from models.env import capture_environment, environment_hash, set_global_seed
+from models.loader import measure_kv_cache_mb, measure_load_memory, unload_model
 
-VARIANTS = [
-    {"variant": "llama-fp16", "model_id": "meta-llama/Llama-3.2-3B-Instruct", "quant_config": None},
-    {"variant": "llama-int8", "model_id": "meta-llama/Llama-3.2-3B-Instruct", "quant_config": BitsAndBytesConfig(load_in_8bit=True)},
-    {"variant": "llama-int4", "model_id": "meta-llama/Llama-3.2-3B-Instruct", "quant_config": BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.float16)},
-    {"variant": "llama-int4-nf4", "model_id": "meta-llama/Llama-3.2-3B-Instruct", "quant_config": BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=torch.float16)},
-    {"variant": "gemma2-fp16", "model_id": "google/gemma-2-2b-it", "quant_config": None},
-    {"variant": "gemma2-int8", "model_id": "google/gemma-2-2b-it", "quant_config": BitsAndBytesConfig(load_in_8bit=True)},
-    {"variant": "gemma2-int4", "model_id": "google/gemma-2-2b-it", "quant_config": BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.float16)},
-    {"variant": "gemma2-int4-nf4", "model_id": "google/gemma-2-2b-it", "quant_config": BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=torch.float16)},
-]
 
-PROMPT = "Explain the attention mechanism in transformers in detail."
-MAX_NEW_TOKENS = 100
-RUNS = 5
-CSV_PATH = "/content/modelscope/results/benchmark_results.csv"
+def completed_variants(csv_path: Path) -> set[str]:
+    """Variants already recorded with status=ok. Failed rows are retried."""
+    if not csv_path.exists():
+        return set()
+    with csv_path.open() as f:
+        return {
+            row["variant"] for row in csv.DictReader(f)
+            if row.get("status") == "ok"
+        }
 
-def get_already_done():
-    if not os.path.exists(CSV_PATH): return []
-    with open(CSV_PATH) as f:
-        return [row["variant"] for row in csv.DictReader(f)]
 
-def write_row(row):
-    exists = os.path.exists(CSV_PATH)
-    with open(CSV_PATH, "a", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=row.keys())
-        if not exists: w.writeheader()
-        w.writerow(row)
+def append_row(csv_path: Path, row: dict[str, Any]) -> None:
+    """Append one row, writing the header on first use.
 
-def measure_variant(v):
-    print("=" * 50)
-    print("Loading " + v["variant"] + "...")
-    torch.cuda.reset_peak_memory_stats()
-    mem_before = torch.cuda.memory_allocated() / (1024**2)
-    t_load = time.time()
-    kwargs = {"device_map": "auto", "torch_dtype": torch.float16}
-    if v["quant_config"]:
-        kwargs["quantization_config"] = v["quant_config"]
-        del kwargs["torch_dtype"]
-    model = AutoModelForCausalLM.from_pretrained(v["model_id"], **kwargs)
-    tokenizer = AutoTokenizer.from_pretrained(v["model_id"])
-    if tokenizer.pad_token is None: tokenizer.pad_token = tokenizer.eos_token
-    load_time = time.time() - t_load
-    memory_mb = round((torch.cuda.max_memory_allocated() / (1024**2)) - mem_before, 1)
-    print("Loaded in " + str(round(load_time, 1)) + "s | Memory: " + str(memory_mb) + "MB")
-    inputs = tokenizer(PROMPT, return_tensors="pt").to("cuda")
-    ttft_list, tps_list = [], []
-    print("Running " + str(RUNS) + " benchmark iterations...")
-    for _ in tqdm(range(RUNS)):
-        torch.cuda.synchronize()
-        t_start = time.perf_counter()
-        with torch.no_grad():
-            outputs = model.generate(**inputs, max_new_tokens=MAX_NEW_TOKENS, do_sample=False, pad_token_id=tokenizer.eos_token_id)
-        torch.cuda.synchronize()
-        t_end = time.perf_counter()
-        n_tokens = outputs.shape[1] - inputs["input_ids"].shape[1]
-        total_time = t_end - t_start
-        ttft_list.append((total_time / max(n_tokens, 1)) * 1000)
-        tps_list.append(n_tokens / total_time)
-    result = {
-        "variant": v["variant"],
-        "model_id": v["model_id"],
-        "memory_mb": memory_mb,
-        "load_time_s": round(load_time, 2),
-        "ttft_p50_ms": round(float(np.percentile(ttft_list, 50)), 2),
-        "ttft_p95_ms": round(float(np.percentile(ttft_list, 95)), 2),
-        "tokens_per_sec": round(float(np.mean(tps_list)), 2),
-    }
-    print("Result: " + str(result))
-    del model
-    gc.collect()
-    torch.cuda.empty_cache()
-    return result
+    Written immediately after each variant so a Colab disconnect at variant 7
+    of 8 costs one variant, not the whole run.
+    """
+    csv_path.parent.mkdir(parents=True, exist_ok=True)
+    exists = csv_path.exists()
+    with csv_path.open("a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=list(row))
+        if not exists:
+            writer.writeheader()
+        writer.writerow(row)
 
-already_done = get_already_done()
-print("Already completed: " + str(already_done))
-for v in tqdm(VARIANTS, desc="Overall Progress"):
-    if v["variant"] in already_done:
-        print("Skipping " + v["variant"] + " - already done")
-        continue
+
+def benchmark_variant(variant_key: str, env_hash: str) -> dict[str, Any]:
+    """Full benchmark for one variant. Raises on unrecoverable failure."""
+    _model_id, family, config_name, _bnb = MODEL_REGISTRY[variant_key]
+
+    model, tokenizer, meta = measure_load_memory(variant_key)
     try:
-        row = measure_variant(v)
-        write_row(row)
-        print("Saved: " + v["variant"])
-    except Exception as e:
-        print("ERROR on " + v["variant"] + ": " + str(e))
-        gc.collect()
-        torch.cuda.empty_cache()
-        continue
-print("All benchmarks complete!")
+        latency = measure_latency(model, tokenizer, BENCHMARK_PROMPTS, runs=5)
+        throughput = measure_throughput(
+            model, tokenizer, BENCHMARK_PROMPTS[0], BATCH_SIZES
+        )
+        # KV cache at a realistic serving shape, reported separately from
+        # weights so the deployment-footprint claim is decomposable.
+        kv_cache_mb = measure_kv_cache_mb(model, tokenizer, batch_size=8, seq_len=512)
+    finally:
+        unload_model(model)
+
+    row: dict[str, Any] = {
+        "variant": variant_key,
+        "model": family,
+        "config": config_name,
+        "status": "ok",
+        "error": "",
+        "env_hash": env_hash,
+        **{k: v for k, v in meta.items() if k not in ("variant", "model", "config")},
+        **latency,
+        **throughput,
+        "kv_cache_b8_s512_mb": kv_cache_mb,
+    }
+    return row
+
+
+def run(variants: list[str], csv_path: Path = BENCHMARK_CSV,
+        resume: bool = True) -> None:
+    set_global_seed()
+    ensure_results_dir()
+
+    env = capture_environment()
+    env_hash = environment_hash(env)
+    ENV_JSON.write_text(json.dumps(env, indent=2))
+    print(f"Environment {env_hash}: {env['gpu_name']}, torch {env['torch']}, "
+          f"bitsandbytes {env['bitsandbytes']}")
+    if not env["is_ampere_or_newer"]:
+        print(
+            "NOTE: pre-Ampere GPU. INT8 throughput here reflects bitsandbytes' "
+            "LLM.int8() mixed-precision path on hardware without wide INT8 "
+            "tensor-core support; these results do not generalize to A100/L4."
+        )
+
+    done = completed_variants(csv_path) if resume else set()
+    if done:
+        print(f"Resuming, already complete: {sorted(done)}")
+
+    for variant_key in tqdm(variants, desc="variants"):
+        if variant_key in done:
+            continue
+        try:
+            row = benchmark_variant(variant_key, env_hash)
+            append_row(csv_path, row)
+            print(
+                f"{variant_key}: {row['weight_memory_mb']} MB weights, "
+                f"{row['tokens_per_sec_batch1']} tok/s, "
+                f"TTFT p50 {row['ttft_p50_ms']} ms"
+            )
+        except Exception as exc:  # noqa: BLE001 - recorded, not swallowed
+            traceback.print_exc()
+            _model_id, family, config_name, _bnb = MODEL_REGISTRY[variant_key]
+            append_row(csv_path, {
+                "variant": variant_key,
+                "model": family,
+                "config": config_name,
+                "status": "failed",
+                "error": f"{type(exc).__name__}: {exc}"[:500],
+                "env_hash": env_hash,
+            })
+            print(f"FAILED {variant_key}: {type(exc).__name__}: {exc}")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Run inference benchmarks.")
+    parser.add_argument("--variants", nargs="*", default=ALL_VARIANTS,
+                        help="Variant keys to benchmark (default: all).")
+    parser.add_argument("--no-resume", action="store_true",
+                        help="Re-run variants already marked complete.")
+    parser.add_argument("--output", type=Path, default=BENCHMARK_CSV)
+    args = parser.parse_args()
+    run(args.variants, csv_path=args.output, resume=not args.no_resume)
+
+
+if __name__ == "__main__":
+    main()

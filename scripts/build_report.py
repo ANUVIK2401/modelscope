@@ -1,0 +1,190 @@
+"""Generate the results tables and README findings from committed result files.
+
+No number in the paper or README is typed by hand. This script is the only path
+from results/*.csv to prose, so a claim that is not in the data cannot appear in
+the writeup, and re-running after new results updates everything at once.
+"""
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+import pandas as pd
+
+# Runnable as `python scripts/build_report.py` as well as `python -m`.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from analysis.pareto import find_pareto_frontier, load_results  # noqa: E402
+from analysis.paths import MERGED_CSV, RESULTS_DIR, SIGNIFICANCE_JSON  # noqa: E402
+from analysis.recommend import generate_recommendation  # noqa: E402
+
+_BENCH_COLUMNS = [
+    ("variant", "Variant"),
+    ("memory_mb", "Weight MB"),
+    ("tokens_per_sec_batch1", "tok/s (b=1)"),
+    ("ttft_p50_ms", "TTFT p50 (ms)"),
+    ("itl_p50_ms", "ITL p50 (ms)"),
+    ("mmlu_accuracy", "MMLU"),
+    ("ece", "ECE"),
+    ("perplexity", "PPL"),
+]
+
+
+def _format_cell(row: pd.Series, column: str) -> str:
+    if column not in row.index or pd.isna(row[column]):
+        return "-"
+    value = row[column]
+    if column == "mmlu_accuracy":
+        if "mmlu_ci_low" in row.index and pd.notna(row["mmlu_ci_low"]):
+            return f"{value:.3f} [{row['mmlu_ci_low']:.3f}, {row['mmlu_ci_high']:.3f}]"
+        return f"{value:.3f}"
+    if column == "variant":
+        return f"`{value}`"
+    if isinstance(value, (int, float)):
+        return f"{value:.1f}" if abs(value) >= 10 else f"{value:.3f}"
+    return str(value)
+
+
+def benchmark_table(df: pd.DataFrame) -> str:
+    headers = [label for _c, label in _BENCH_COLUMNS]
+    lines = ["| " + " | ".join(headers) + " |",
+             "|" + "|".join(["---"] * len(headers)) + "|"]
+    for _, row in df.sort_values(["model", "config"]).iterrows():
+        lines.append("| " + " | ".join(
+            _format_cell(row, column) for column, _label in _BENCH_COLUMNS
+        ) + " |")
+    return "\n".join(lines)
+
+
+def sensitivity_table(report: dict) -> str:
+    lines = ["| Format | Model | Held-out R² | MAE | Baseline MAE | Split |",
+             "|---|---|---|---|---|---|"]
+    for method, result in report.get("predictors", {}).items():
+        if "error" in result:
+            continue
+        for name, scores in result["models"].items():
+            lines.append(
+                f"| {method} | {name} | {scores['r2_heldout']:+.3f} | "
+                f"{scores['mae_heldout']:.5f} | {scores['mae_baseline']:.5f} | "
+                f"{result['split']} |"
+            )
+    return "\n".join(lines) if len(lines) > 2 else "_No sensitivity results yet._"
+
+
+def significance_section(report: dict) -> str:
+    lines = [
+        f"- **n = {report['n_questions']}** questions per variant, identical set "
+        "across variants (paired design).",
+        f"- **Minimum detectable effect:** {report['minimum_detectable_effect']:.3f} "
+        "accuracy at 80% power. Smaller gaps are unresolvable here.",
+        f"- **Significant after Holm-Bonferroni:** "
+        f"{report['n_significant_holm']} of {report['n_comparisons']} pairwise comparisons.",
+        "",
+    ]
+    significant = [c for c in report["comparisons"] if c["significant_holm"]]
+    if significant:
+        lines.append("Differences that survived correction:")
+        lines.append("")
+        for comparison in sorted(significant, key=lambda c: -abs(c["difference"])):
+            gap = comparison["difference"]
+            better, worse = (
+                (comparison["variant_a"], comparison["variant_b"]) if gap > 0
+                else (comparison["variant_b"], comparison["variant_a"])
+            )
+            # The CI is on (a - b). When b is the better variant we state the
+            # gap as b - a, so the interval must be negated and re-ordered to
+            # stay an interval on the quantity actually being reported.
+            low, high = comparison["ci_low"], comparison["ci_high"]
+            if gap < 0:
+                low, high = -high, -low
+            lines.append(
+                f"- `{better}` beats `{worse}` by {abs(gap):.3f} "
+                f"(95% CI [{low:.3f}, {high:.3f}], "
+                f"McNemar p = {comparison['p_mcnemar']:.4f})"
+            )
+    else:
+        lines.append(
+            "No pairwise accuracy difference survived multiple-comparison correction. "
+            "At this sample size the configurations are statistically indistinguishable "
+            "on MMLU — which is itself the finding, and the reason single-run "
+            "leaderboards of these variants should not be trusted."
+        )
+    return "\n".join(lines)
+
+
+def build(output_path: Path) -> str:
+    merged = find_pareto_frontier(load_results())
+    merged.to_csv(MERGED_CSV, index=False)
+
+    sections = [
+        "# ModelScope — generated results",
+        "",
+        "_Generated by `scripts/build_report.py`. Do not edit by hand._",
+        "",
+        "## Benchmark and quality",
+        "",
+        benchmark_table(merged),
+        "",
+        f"Pareto-optimal configurations: "
+        f"{', '.join('`' + v + '`' for v in merged[merged.is_pareto]['variant'])}",
+        "",
+    ]
+
+    if SIGNIFICANCE_JSON.exists():
+        sections += ["## Statistical significance", "",
+                     significance_section(json.loads(SIGNIFICANCE_JSON.read_text())), ""]
+
+    sensitivity_json = RESULTS_DIR / "sensitivity_report.json"
+    if sensitivity_json.exists():
+        report = json.loads(sensitivity_json.read_text())
+        comparison = report.get("format_comparison", {})
+        sections += [
+            "## Layer sensitivity prediction",
+            "",
+            sensitivity_table(report),
+            "",
+            f"- Layers profiled: **{comparison.get('n_layers', '-')}**",
+            f"- NF4 mean relative advantage over FP4: "
+            f"**{comparison.get('nf4_relative_advantage', 0) * 100:.1f}%** "
+            f"(NF4 better on {comparison.get('nf4_wins_fraction', 0) * 100:.0f}% of layers)",
+            "- Correlation of NF4 advantage with tail-heaviness: "
+            + ", ".join(f"{k} r={v:+.3f}"
+                        for k, v in comparison.get("advantage_vs_tail_correlation", {}).items()),
+            "",
+        ]
+
+    recommendation = generate_recommendation(merged)
+    sections += ["## Deployment recommendations", ""]
+    for goal in ("latency_priority", "memory_priority", "balanced"):
+        entry = recommendation[goal]
+        sections.append(f"- **{goal.replace('_', ' ')}**: `{entry['variant']}` — "
+                        f"{entry['rationale']}")
+    sections += ["", f"> {recommendation['caveat']}", ""]
+
+    if (env_path := RESULTS_DIR / "environment.json").exists():
+        env = json.loads(env_path.read_text())
+        sections += [
+            "## Environment",
+            "",
+            f"`{env.get('gpu_name')}` · CUDA {env.get('cuda')} · "
+            f"torch {env.get('torch')} · transformers {env.get('transformers')} · "
+            f"bitsandbytes {env.get('bitsandbytes')} · commit `{env.get('git_commit')}`",
+            "",
+        ]
+
+    text = "\n".join(sections)
+    output_path.write_text(text)
+    return text
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Generate results tables from CSVs.")
+    parser.add_argument("--output", type=Path, default=RESULTS_DIR / "REPORT.md")
+    args = parser.parse_args()
+    print(build(args.output))
+    print(f"\nWritten to {args.output}")
+
+
+if __name__ == "__main__":
+    main()

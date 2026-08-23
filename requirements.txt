@@ -1,13 +1,27 @@
-transformers
-bitsandbytes
-torch
-accelerate
-fastapi
-uvicorn
-prometheus-client
-sentence-transformers
-datasets
-rouge-score
-matplotlib
-pandas
-tqdm
+# Core inference stack. Versions pinned with lower bounds: bitsandbytes
+# quantization kernels have changed measurably across releases, so results are
+# only comparable within a compatible range. The exact resolved versions used
+# for any run are recorded in results/environment.json.
+torch>=2.4,<3.0
+transformers>=4.44
+bitsandbytes>=0.43
+accelerate>=0.33
+datasets>=2.20
+sentencepiece>=0.2
+
+# Evaluation
+rouge-score>=0.1.2
+scipy>=1.11
+scikit-learn>=1.4
+
+# Analysis and plotting
+pandas>=2.0
+numpy>=1.26
+matplotlib>=3.8
+tqdm>=4.66
+
+# Serving
+fastapi>=0.110
+uvicorn>=0.29
+prometheus-client>=0.20
+pydantic>=2.6

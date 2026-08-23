@@ -86,7 +86,7 @@ def generate(request: GenerateRequest) -> GenerateResponse:
             try:
                 _swap_variant(request.variant)
             except (ValueError, KeyError) as exc:
-                raise HTTPException(status_code=400, detail=str(exc))
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
 
         model = _cache["model"]
         tokenizer = _cache["tokenizer"]

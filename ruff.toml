@@ -1,0 +1,13 @@
+line-length = 100
+exclude = ["venv", ".venv", "notebooks"]
+
+[lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = [
+    "E501",  # line length handled by the formatter
+    "B008",  # FastAPI Depends() in defaults is idiomatic
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["E402"]
+"*.ipynb" = ["E402"]  # notebooks legitimately set sys.path before imports
