@@ -7,6 +7,7 @@ made -- the triage is cheap.
 """
 
 import argparse
+import gc
 import json
 from pathlib import Path
 
@@ -31,7 +32,12 @@ def profile_family(family: str, model_id: str) -> pd.DataFrame:
     try:
         frame = profile_model_layers(model)
     finally:
+        # Collect explicitly: the two FP16 checkpoints are ~6.4 GB and ~5.2 GB
+        # on CPU, and Colab's standard runtime has 12.7 GB. Relying on lazy
+        # refcount cleanup between families risks an OOM kill that looks like a
+        # random disconnect.
         del model
+        gc.collect()
     frame["model_family"] = family
     frame["model_id"] = model_id
     return frame
