@@ -22,6 +22,11 @@ jobs:
           # CPU-only torch: the CI machine has no GPU, and every test here is
           # designed to run without one.
           pip install torch --index-url https://download.pytorch.org/whl/cpu
+          # transformers is imported at module scope by models/configs.py for
+          # BitsAndBytesConfig, so collection fails without it. The CUDA
+          # bitsandbytes wheel is NOT needed: the config object constructs
+          # fine without it, and no test loads a quantized model.
+          pip install transformers
           pip install pytest pytest-cov ruff pandas numpy scipy scikit-learn \
                       matplotlib rouge-score tqdm
 
