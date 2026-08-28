@@ -38,6 +38,29 @@ def _device_used_mb() -> float:
     return (total_bytes - free_bytes) / (1024 ** 2)
 
 
+def build_load_kwargs(family: str, bnb_config: Any) -> dict[str, Any]:
+    """Assemble `from_pretrained` kwargs for a family/quantization pair.
+
+    Split out from the loader so the Gemma attention rule is testable without
+    a GPU or a model download.
+
+    Gemma-2 soft-caps attention logits. The SDPA and flash-attention kernels
+    silently drop that capping, and transformers picks SDPA by default when it
+    is available -- so every Gemma quality number would describe an
+    architecture the model was never trained as. Only the eager path
+    implements it. Llama has no soft-capping and keeps the faster kernel.
+    """
+    kwargs: dict[str, Any] = {"device_map": {"": 0}}
+    if family == "gemma":
+        kwargs["attn_implementation"] = "eager"
+    if bnb_config is None:
+        # `dtype` is the current name; `torch_dtype` is back-compat only.
+        kwargs["dtype"] = torch.float16
+    else:
+        kwargs["quantization_config"] = bnb_config
+    return kwargs
+
+
 def measure_load_memory(variant_key: str) -> tuple[Any, Any, dict[str, Any]]:
     """Load a variant and measure the VRAM its weights actually occupy.
 
@@ -69,12 +92,7 @@ def measure_load_memory(variant_key: str) -> tuple[Any, Any, dict[str, Any]]:
     driver_before_mb = _device_used_mb()
     alloc_before_mb = torch.cuda.memory_allocated() / (1024 ** 2)
 
-    load_kwargs: dict[str, Any] = {"device_map": {"": 0}}
-    if bnb_config is None:
-        # `dtype` is the current name; `torch_dtype` is back-compat only.
-        load_kwargs["dtype"] = torch.float16
-    else:
-        load_kwargs["quantization_config"] = bnb_config
+    load_kwargs = build_load_kwargs(family, bnb_config)
 
     t0 = time.perf_counter()
     model = AutoModelForCausalLM.from_pretrained(model_id, **load_kwargs)

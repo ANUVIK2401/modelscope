@@ -69,3 +69,29 @@ class TestEvalSubjects:
         counts = {c: list(EVAL_SUBJECTS.values()).count(c) for c in SUBJECT_CATEGORIES}
         assert counts["reasoning"] >= 2
         assert counts["recall"] >= 2
+
+
+def test_gemma_gets_eager_attention_and_llama_does_not():
+    """Gemma-2 soft-caps attention logits; SDPA drops that silently.
+
+    Without eager attention every Gemma quality number would describe an
+    uncapped architecture the model was never trained as.
+    """
+    from models.loader import build_load_kwargs
+
+    gemma = build_load_kwargs("gemma", None)
+    llama = build_load_kwargs("llama", None)
+
+    assert gemma["attn_implementation"] == "eager"
+    assert "attn_implementation" not in llama
+
+
+def test_load_kwargs_never_mix_dtype_and_quantization_config():
+    """Passing both makes bitsandbytes' compute dtype ambiguous."""
+    from models.configs import MODEL_REGISTRY
+    from models.loader import build_load_kwargs
+
+    for _key, (_mid, family, _cfg, bnb) in MODEL_REGISTRY.items():
+        kwargs = build_load_kwargs(family, bnb)
+        assert ("dtype" in kwargs) != ("quantization_config" in kwargs)
+        assert kwargs["device_map"] == {"": 0}
