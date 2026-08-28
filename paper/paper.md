@@ -19,6 +19,7 @@ a corrected benchmark with confidence intervals on every quantity, and (ii) test
 mechanistic hypothesis: because bitsandbytes shares one absmax scale across each 64-weight
 block, layers whose weights are heavy-tailed should suffer disproportionate reconstruction
 error, and NF4's normal-quantile levels should help more precisely where tails are heavier.
+The first prediction survives; the second is rejected with its sign reversed.
 
 We find the block-level dynamic range predicts per-layer reconstruction error with held-out
 R² = `[TBD]` under leave-one-model-family-out validation, using features computable from an
@@ -155,10 +156,19 @@ effective grid for the other 63. This yields a directional prediction:
 > **H2.** NF4's advantage over FP4 increases with tail-heaviness, because uniform FP4
 > levels waste resolution on a range the weights rarely occupy.
 
+**H2 is rejected, with the sign reversed.** Against the true E2M1 codebook, NF4's relative
+advantage *decreases* monotonically in tail-heaviness: +12.7% at excess kurtosis 0.1 and
++1.0% at kurtosis 164 on Student-t weights. The premise was wrong in its own terms — FP4
+is not a uniform grid but a floating-point format whose levels are geometrically spaced,
+so it already concentrates resolution near zero. NF4's levels are normal quantiles, which
+makes heavy tails the regime where its prior is *least* appropriate. An earlier version of
+this study confirmed H2, but only because it stood FP4 in as a uniform 15-level grid.
+
 For every linear layer we compute (a) distribution statistics from FP16 weights —
 kurtosis, skewness, outlier ratio, block dynamic range, quantiles — and (b) ground-truth
-reconstruction error under a reference implementation of blockwise absmax RTN (FP4/INT8)
-and the QLoRA NF4 level table. We then regress (b) on (a).
+reconstruction error under blockwise absmax quantization against each format's real level
+table — the E2M1 codebook for FP4, the QLoRA table for NF4, and a uniform signed grid for
+INT8, which is the only one of the three that genuinely is uniform. We then regress (b) on (a).
 
 **Validation is leave-one-model-family-out.** Training on Llama layers and testing on
 Gemma layers answers the question that matters — does this transfer to a model you have

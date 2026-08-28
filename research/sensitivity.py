@@ -105,11 +105,11 @@ def layer_weight_statistics(weight: torch.Tensor) -> dict[str, float]:
 
 def quantize_dequantize_rtn(weight: torch.Tensor, bits: int = 4,
                             block_size: int = BLOCK_SIZE) -> torch.Tensor:
-    """Blockwise absmax round-to-nearest quantize-dequantize.
+    """Blockwise absmax round-to-nearest onto a UNIFORM signed grid.
 
-    Reference implementation of what bitsandbytes does for 4-bit: reshape into
-    blocks, scale each by its own absmax, round to the grid, rescale. Used to
-    measure reconstruction error without loading a quantized model.
+    Correct for INT8, which really is a uniform integer format. Do NOT use this
+    for 4-bit: neither FP4 (E2M1, geometrically spaced) nor NF4 (normal
+    quantiles) is uniform, and both have their own level tables above.
     """
     flat = _to_float32(weight)
     n = flat.numel()
@@ -125,6 +125,55 @@ def quantize_dequantize_rtn(weight: torch.Tensor, bits: int = 4,
     quantized = torch.round(normalized * levels).clamp(-levels - 1, levels) / levels
     reconstructed = (quantized * absmax).reshape(-1)[:n]
     return reconstructed
+
+
+def fp4_levels() -> torch.Tensor:
+    """The FP4 (E2M1) level table, absmax-normalized.
+
+    FP4 is a *floating-point* format -- 1 sign bit, 2 exponent bits, 1 mantissa
+    bit -- so its levels are geometrically spaced, not uniform. Modelling it as
+    a uniform 4-bit grid is wrong in a way that biases this study's central
+    comparison: uniform spacing is closer to optimal for flat distributions, so
+    it flatters FP4 exactly where NF4 should win, and it makes the FP4-vs-NF4
+    gap a measurement of the wrong contrast.
+
+    Measured on synthetic weights, the uniform stand-in reported NF4 as 30.9%
+    *worse* than FP4 on uniformly-distributed weights, where the real codebook
+    puts NF4 17.8% ahead -- a sign flip on the paper's headline claim.
+
+    Magnitudes are derived from the bit fields directly: exponent bias 1, an
+    implicit leading 1 for normals, and no leading 1 for the e=0 subnormals,
+    giving {0, .5, 1, 1.5, 2, 3, 4, 6}, divided through by 6 to normalize.
+    Signed, that is 15 distinct values -- +0 and -0 collapse to one level.
+    """
+    raw = torch.tensor([0.0, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0],
+                       dtype=torch.float32)
+    positive = raw / raw.max()
+    return torch.cat([positive, -positive]).unique()
+
+
+def _quantize_to_levels(weight: torch.Tensor, levels: torch.Tensor,
+                        block_size: int = BLOCK_SIZE) -> torch.Tensor:
+    """Blockwise absmax quantize-dequantize onto an arbitrary level table."""
+    flat = _to_float32(weight)
+    n = flat.numel()
+    pad = (-n) % block_size
+    if pad:
+        flat = torch.cat([flat, torch.zeros(pad, dtype=flat.dtype, device=flat.device)])
+
+    blocks = flat.reshape(-1, block_size)
+    absmax = blocks.abs().max(dim=1, keepdim=True).values.clamp_min(1e-12)
+    normalized = (blocks / absmax).unsqueeze(-1)
+
+    table = levels.to(flat.device).view(1, 1, -1)
+    nearest = torch.argmin((normalized - table).abs(), dim=-1)
+    return (table.view(-1)[nearest] * absmax).reshape(-1)[:n]
+
+
+def quantize_dequantize_fp4(weight: torch.Tensor,
+                            block_size: int = BLOCK_SIZE) -> torch.Tensor:
+    """Blockwise FP4 quantize-dequantize using the E2M1 level table."""
+    return _quantize_to_levels(weight, fp4_levels(), block_size)
 
 
 def nf4_levels() -> torch.Tensor:
@@ -147,20 +196,7 @@ def nf4_levels() -> torch.Tensor:
 def quantize_dequantize_nf4(weight: torch.Tensor,
                             block_size: int = BLOCK_SIZE) -> torch.Tensor:
     """Blockwise NF4 quantize-dequantize using the QLoRA level table."""
-    flat = _to_float32(weight)
-    n = flat.numel()
-    pad = (-n) % block_size
-    if pad:
-        flat = torch.cat([flat, torch.zeros(pad, dtype=flat.dtype, device=flat.device)])
-
-    blocks = flat.reshape(-1, block_size)
-    absmax = blocks.abs().max(dim=1, keepdim=True).values.clamp_min(1e-12)
-    normalized = (blocks / absmax).unsqueeze(-1)
-
-    levels = nf4_levels().to(flat.device).view(1, 1, -1)
-    nearest = torch.argmin((normalized - levels).abs(), dim=-1)
-    reconstructed = (levels.view(-1)[nearest] * absmax).reshape(-1)[:n]
-    return reconstructed
+    return _quantize_to_levels(weight, nf4_levels(), block_size)
 
 
 def layer_quantization_error(weight: torch.Tensor, method: str = "fp4") -> dict[str, float]:
@@ -173,7 +209,7 @@ def layer_quantization_error(weight: torch.Tensor, method: str = "fp4") -> dict[
     if method == "nf4":
         reconstructed = quantize_dequantize_nf4(weight)
     elif method == "fp4":
-        reconstructed = quantize_dequantize_rtn(weight, bits=4)
+        reconstructed = quantize_dequantize_fp4(weight)
     elif method == "int8":
         reconstructed = quantize_dequantize_rtn(weight, bits=8)
     else:

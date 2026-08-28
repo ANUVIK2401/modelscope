@@ -18,8 +18,12 @@ large-magnitude weight sets the scale for its whole block, coarsening the effect
 for the other 63. That yields two falsifiable predictions:
 
 - **H1** — layers with heavier-tailed weights suffer more reconstruction error.
-- **H2** — NF4's normal-quantile levels help *more* where tails are heavier, because
-  uniform FP4 levels waste resolution on a range the weights rarely occupy.
+- **H2** — NF4's normal-quantile levels help *more* where tails are heavier.
+  **This one is false.** NF4 beats FP4 nearly everywhere, but its margin *shrinks*
+  monotonically as tails thicken: +12.7% at excess kurtosis 0.1, +1.0% at kurtosis 164.
+  NF4 places its levels at the quantiles of a *normal*, so a heavy tail is exactly where
+  that prior is wrong. An earlier version confirmed H2 only because it modelled FP4 as a
+  uniform 4-bit grid; FP4 is E2M1, geometrically spaced. See the retraction table below.
 
 Both are tested in [research/sensitivity.py](research/sensitivity.py), validated
 **leave-one-model-family-out** — train on Llama layers, predict Gemma layers — because that
@@ -68,10 +72,14 @@ than quietly reverted.
 | `except Exception: continue` | Failed variants left no trace; resume logic retried forever, Pareto ran over a silent subset | Failures recorded with `status="failed"` and the error ([benchmarks/runner.py](benchmarks/runner.py)) |
 | Two parallel implementations, one written as string literals from a notebook cell | Every published number came from the **untested** path | One implementation, imported everywhere; 102 tests in CI |
 | `recommend.py` read a `relevance_score` column | Nothing ever produced it — raised on real data | Column removed; quality floor now relative to FP16 baseline |
+| FP4 modelled as a uniform 15-level grid | FP4 is **E2M1** — a floating-point format with geometrically spaced levels. The stand-in flattered FP4 on flat distributions and **flipped the sign of H2**, the study's own headline hypothesis | Real E2M1 codebook derived from the bit fields ([research/sensitivity.py](research/sensitivity.py)); H2 now rejected |
 | Batch sizes `[1,4,16,32]` declared but unused | Every throughput number was batch 1, the least deployment-relevant setting | Batched throughput + KV-cache memory measured ([benchmarks/throughput.py](benchmarks/throughput.py)) |
 
 **Findings retracted:** the previous README's "NF4 is worse than plain INT4", "Gemma is
-faster per MB", and "INT4 strictly beats INT8" all rested on the defects above. The first
+faster per MB", "INT4 strictly beats INT8", and this project's own **H2** all rested on the
+defects above. H2 is the sharpest case: the hypothesis was confirmed by a reference
+implementation that modelled FP4 as something FP4 is not, and it reverses against the real
+codebook. The first
 two are unsupported; the third is likely a T4-specific artifact of the LLM.int8() path on
 hardware without wide INT8 tensor cores, and is not claimed to generalize.
 
