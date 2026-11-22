@@ -1,0 +1,22 @@
+{
+  "gpu": "NVIDIA L4, GPU-4549637f-b276-5285-adc4-0f437a786fe4, 23034 MiB, 580.126.20",
+  "torch": "2.9.0+cu129",
+  "vllm": "0.11.2",
+  "cuda": "12.9",
+  "python": "3.12.12 (main, Oct 10 2025, 08:52:57) [GCC 11.4.0]",
+  "models": {
+    "bf16": [
+      "Qwen/Qwen3-8B",
+      "b968826d9c46dd6066d109eabc6255188de91218"
+    ],
+    "awq": [
+      "Qwen/Qwen3-8B-AWQ",
+      "4da05a8edb55c6046cce958586c33b61da07bb79"
+    ]
+  },
+  "slo_ms": {
+    "short": 500,
+    "long": 1500
+  },
+  "client": "loopback, closed-loop concurrency, no client-side queue time"
+}

@@ -1,0 +1,26 @@
+Starting Uvicorn on 127.0.0.1:57459. Server log at /content/modelscope-t4-fastapi-server.log
+Smoke test passed for llama_nf4.
+
+INFO:     Started server process [12439]
+INFO:     Waiting for application startup.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1795335434.485963   12439 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1795335437.976664   12439 cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
+
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]
+Loading checkpoint shards:  50%|█████     | 1/2 [00:20<00:20, 20.62s/it]
+Loading checkpoint shards: 100%|██████████| 2/2 [00:27<00:00, 12.29s/it]
+Loading checkpoint shards: 100%|██████████| 2/2 [00:27<00:00, 13.54s/it]
+INFO:     Application startup complete.
+INFO:     Uvicorn running on socket ('127.0.0.1', 57459) (Press CTRL+C to quit)
+INFO:     127.0.0.1:58348 - "GET /health HTTP/1.1" 200 OK
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+/usr/local/lib/python3.13/dist-packages/bitsandbytes/backends/cuda/ops.py:464: FutureWarning: _check_is_size will be removed in a future PyTorch release along with guard_size_oblivious.     Use _check(i >= 0) instead.
+  torch._check_is_size(blocksize)
+INFO:     127.0.0.1:58358 - "POST /generate HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [12439]

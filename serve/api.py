@@ -13,7 +13,7 @@ from models.generate import generate_text
 from models.loader import load_model, unload_model
 from serve.metrics import inference_requests_total, update_metrics
 
-_DEFAULT_VARIANT = "llama_int4"
+_DEFAULT_VARIANT = "llama_nf4"
 
 # Single-model cache. All fields written together under _lock.
 _cache: dict[str, Any] = {

@@ -1,0 +1,27 @@
+Environment 7b5175011d8d: Tesla T4, torch 2.14.1+cu130, bitsandbytes 0.48.2
+NOTE: pre-Ampere GPU. INT8 throughput here reflects bitsandbytes' LLM.int8() mixed-precision path on hardware without wide INT8 tensor-core support; these results do not generalize to A100/L4.
+
+variants:   0%|          | 0/1 [00:00<?, ?it/s]driver_used_mib=104.9 allocator_live_mib=0.0 allocator_reserved_mib=0.0
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1795334892.763692   10170 cpu_feature_guard.cc:227] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 AVX512F FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1795334895.697791   10170 cudart_stub.cc:31] Could not find cuda drivers on your machine, GPU will not be used.
+
+
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]
+
+Loading checkpoint shards:  50%|█████     | 1/2 [00:12<00:12, 12.79s/it]
+
+Loading checkpoint shards: 100%|██████████| 2/2 [00:18<00:00,  8.74s/it]
+Loading checkpoint shards: 100%|██████████| 2/2 [00:18<00:00,  9.35s/it]
+driver_used_mib=3230.9 allocator_live_mib=2263.9 allocator_reserved_mib=3110.0
+The following generation flags are not valid and may be ignored: ['temperature', 'top_p']. Set `TRANSFORMERS_VERBOSITY=info` for more details.
+/usr/local/lib/python3.13/dist-packages/bitsandbytes/backends/cuda/ops.py:464: FutureWarning: _check_is_size will be removed in a future PyTorch release along with guard_size_oblivious.     Use _check(i >= 0) instead.
+  torch._check_is_size(blocksize)
+driver_used_mib=3242.9 allocator_live_mib=2272.1 allocator_reserved_mib=3110.0
+driver_used_mib=4308.9 allocator_live_mib=3722.1 allocator_reserved_mib=4176.0
+llama_nf4: 3126.0 MB weights, 19.589 tok/s, TTFT p50 73.75 ms
+
+variants: 100%|██████████| 1/1 [03:39<00:00, 219.94s/it]
+variants: 100%|██████████| 1/1 [03:39<00:00, 219.94s/it]

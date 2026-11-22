@@ -1,0 +1,17 @@
+
+Terminating task because it has reached the maximum timeout of 1800 seconds. To change this limit, see https://cloud.google.com/run/docs/configuring/task-timeout
+Starting awq on localhost with prefix caching False
+bf16 exact-match quality: 28/40
+
+
+
+
+
+
+
+
+
+
+
+
+Starting bf16 on localhost with prefix caching False

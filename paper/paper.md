@@ -112,7 +112,8 @@ effects.
 
 ### 3.2 Results
 
-`[TBD — table generated from results/merged_results.csv]`
+The [verified Colab T4 baseline](../results/t4-llama-baseline/REPORT.md) covers Llama
+3.2 3B FP16 and NF4. The full cross-family quality and performance table remains pending.
 
 | Variant | Weight MB | tok/s (b=1) | TTFT p50 (ms) | ITL p50 (ms) | MMLU [95% CI] | ECE | PPL |
 |---|---|---|---|---|---|---|---|

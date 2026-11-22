@@ -1,0 +1,9 @@
+{
+  "ttft_ms": 1553.737609000109,
+  "e2e_ms": 1586.045138000145,
+  "prompt_tokens": 21,
+  "output_tokens": 2,
+  "finish_reason": "stop",
+  "text": "Green",
+  "error": null
+}

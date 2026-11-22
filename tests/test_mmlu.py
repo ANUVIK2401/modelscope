@@ -171,3 +171,36 @@ class TestBaselineValidation:
     def test_unknown_variant_is_not_gated(self):
         verdict = validate_baseline("llama_nf4", 0.55, 0.49, 0.61)
         assert verdict["passed"] is True
+
+
+class TestFlagsPathIsolation:
+    """Per-question flags must not leak between runs writing to different CSVs.
+
+    significance.py reads per_question_flags.json for paired McNemar tests. If a
+    run against an alternate csv_path (the notebook's smoke test, which uses
+    skip_perplexity and strict=False) wrote into the shared file, the real
+    significance analysis would be pairing rows of different provenance.
+    """
+
+    def test_default_csv_uses_canonical_flags_path(self):
+        from eval.harness import PER_QUESTION_JSON, QUALITY_CSV, _flags_path_for
+
+        assert _flags_path_for(QUALITY_CSV) == PER_QUESTION_JSON
+
+    def test_alternate_csv_gets_sibling_flags_file(self, tmp_path):
+        from eval.harness import PER_QUESTION_JSON, _flags_path_for
+
+        smoke_csv = tmp_path / "smoke" / "quality_results.csv"
+        flags = _flags_path_for(smoke_csv)
+
+        assert flags != PER_QUESTION_JSON
+        assert flags.parent == smoke_csv.parent
+        assert flags.name == "per_question_flags.json"
+
+    def test_distinct_csvs_never_share_a_flags_file(self, tmp_path):
+        from eval.harness import _flags_path_for
+
+        a = _flags_path_for(tmp_path / "run_a" / "quality_results.csv")
+        b = _flags_path_for(tmp_path / "run_b" / "quality_results.csv")
+
+        assert a != b

@@ -28,12 +28,19 @@ jobs:
           # fine without it, and no test loads a quantized model.
           pip install transformers
           pip install pytest pytest-cov ruff pandas numpy scipy scikit-learn \
-                      matplotlib rouge-score tqdm
+                      matplotlib rouge-score tqdm fastapi prometheus-client httpx
 
       - name: Lint
         run: ruff check . --exclude venv
 
       - name: Test with coverage
         run: |
+          # The floor is enforced, not merely reported. An unchecked coverage
+          # claim is the same class of defect as an unchecked accuracy claim.
+          # 60% sits just below the current 64.5% so the gate catches real
+          # regressions without tripping on rounding. A CPU-only suite cannot
+          # honestly reach a typical 80% bar: the GPU-bound modules (loader,
+          # env, perplexity, generate) never execute here. Raise the floor as
+          # coverage improves; never lower it.
           pytest --cov=analysis --cov=research --cov=eval --cov=models \
-                 --cov-report=term-missing -m "not gpu"
+                 --cov-report=term-missing --cov-fail-under=60 -m "not gpu"
