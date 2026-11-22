@@ -1,0 +1,178 @@
+{
+  "summary": {
+    "workload": "long",
+    "concurrency": 4,
+    "repeat": 1,
+    "requests": 16,
+    "successful": 16,
+    "errors": 0,
+    "elapsed_s": 23.458744053000146,
+    "ttft_target_ms": 1500,
+    "ttft_p50_ms": 830.4646009999033,
+    "ttft_p95_ms": 1597.0011202499563,
+    "output_toks_s": 43.651100744630035,
+    "goodput_rps": 0.5967923929929887
+  },
+  "rows": [
+    {
+      "request": 0,
+      "ttft_ms": 1597.8334499998255,
+      "e2e_ms": 6259.286949999932,
+      "prompt_tokens": 1342,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "- Selected site: Harbor-100  \n- Approved budget: $160,000  \n- Implementation window: 20 days\n\n**Note:** The final decision summary excludes all provisional notes from the records.\n\n**Note:** The final decision summary excludes all provisional notes from the records",
+      "error": null
+    },
+    {
+      "request": 1,
+      "ttft_ms": 419.53548500009674,
+      "e2e_ms": 5773.681291999992,
+      "prompt_tokens": 1342,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "- Selected site: Harbor-101  \n- Budget: 161 thousand dollars  \n- Implementation window: 21 days\n\n**Note:** The final decision is based on the provided \"Final decision\" section and excludes all provisional notes from the individual records.\n\n**Note:** The final decision",
+      "error": null
+    },
+    {
+      "request": 2,
+      "ttft_ms": 1012.2020740000153,
+      "e2e_ms": 5841.1931629998435,
+      "prompt_tokens": 1342,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "- Selected site: Harbor-102  \n- Budget: $162,000  \n- Implementation window: 22 days\n\n**Note:** The final decision summary excludes all provisional notes from the survey records.\n\n**Note:** The final decision summary excludes all provisional notes from the survey",
+      "error": null
+    },
+    {
+      "request": 3,
+      "ttft_ms": 1596.723677,
+      "e2e_ms": 6257.8392280001935,
+      "prompt_tokens": 1342,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "- Selected site: Harbor-103  \n- Budget: $163,000  \n- Implementation window: 23 days\n\n**Note:** The final decision is based on the provided \"Final decision\" record, and all other records are considered preliminary and not included in the summary.",
+      "error": null
+    },
+    {
+      "request": 4,
+      "ttft_ms": 484.4504360000883,
+      "e2e_ms": 5816.296756000156,
+      "prompt_tokens": 1342,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "- Selected Site: Harbor-104  \n- Budget: $164,000  \n- Implementation Window: 24 days\n\n**Note:** The final decision is based on the provided \"Final decision\" record, and all other records are considered preliminary and not included in the summary.",
+      "error": null
+    },
+    {
+      "request": 5,
+      "ttft_ms": 831.4279209998858,
+      "e2e_ms": 5816.384586999902,
+      "prompt_tokens": 1342,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "- Selected site: Harbor-105  \n- Budget: $165,000  \n- Implementation window: 25 days\n\n**Note:** The final decision is based on the provided \"Final decision\" record, and all other records are considered preliminary and not included in the summary.",
+      "error": null
+    },
+    {
+      "request": 6,
+      "ttft_ms": 986.8924649999826,
+      "e2e_ms": 5812.816165999948,
+      "prompt_tokens": 1342,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "- Selected site: Harbor-106  \n- Budget: 166 thousand dollars  \n- Implementation window: 26 days\n\n**Note:** The final decision is based on the provided \"Final decision\" record, and all other records are considered preliminary and unrelated to the final project decision.\n\n",
+      "error": null
+    },
+    {
+      "request": 7,
+      "ttft_ms": 1221.2918779998745,
+      "e2e_ms": 6226.309234999917,
+      "prompt_tokens": 1342,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "- Selected site: Harbor-107  \n- Budget: $167,000  \n- Implementation window: 27 days\n\n**Note:** The final decision is based on the provided \"Final decision\" record, and all other records are considered preliminary and unrelated to the final project decision.",
+      "error": null
+    },
+    {
+      "request": 8,
+      "ttft_ms": 480.98264500004007,
+      "e2e_ms": 5830.524023999942,
+      "prompt_tokens": 1342,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "- Selected Site: Harbor-108  \n- Budget: $168,000  \n- Implementation Window: 28 days\n\n**Note:** The final decision is based on the provided \"Final decision\" record, and all other records are considered provisional observations.\n\n**Note:** The",
+      "error": null
+    },
+    {
+      "request": 9,
+      "ttft_ms": 827.3405780000758,
+      "e2e_ms": 5830.312175000017,
+      "prompt_tokens": 1342,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "- Selected site: Harbor-109  \n- Budget: 169 thousand dollars  \n- Implementation window: 29 days\n\n**Note:** The final decision is based on the provided \"Final decision\" record, and all other records are considered preliminary and not included in the summary.\n\n**",
+      "error": null
+    },
+    {
+      "request": 10,
+      "ttft_ms": 824.0203259999817,
+      "e2e_ms": 5832.44806499988,
+      "prompt_tokens": 1342,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "- Selected Site: Harbor-110  \n- Budget: $170,000  \n- Implementation Window: 30 days\n\n**Note:** The final decision is based on the provided \"Final decision\" record, and all other records are considered provisional observations.\n\n**Note:** The",
+      "error": null
+    },
+    {
+      "request": 11,
+      "ttft_ms": 827.1341480001411,
+      "e2e_ms": 5836.848888000077,
+      "prompt_tokens": 1342,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "- Selected Site: Harbor-111  \n- Budget: $171,000  \n- Implementation Window: 31 days\n\n**Note:** The final decision is based on the provided \"Final decision\" record, and all other records are considered preliminary and unrelated to the final project decision.",
+      "error": null
+    },
+    {
+      "request": 12,
+      "ttft_ms": 482.91748600013307,
+      "e2e_ms": 5841.0507140001755,
+      "prompt_tokens": 1342,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "- Selected Site: Harbor-112  \n- Budget: $172,000  \n- Implementation Window: 32 days\n\n**Note:** The final decision is based on the provided \"Final decision\" record, and all other records are considered provisional.\n\n**Note:** The final",
+      "error": null
+    },
+    {
+      "request": 13,
+      "ttft_ms": 833.8850499999353,
+      "e2e_ms": 5841.005907999943,
+      "prompt_tokens": 1342,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "- Selected Site: Harbor-113  \n- Budget: $173,000  \n- Implementation Window: 33 days\n\n**Note:** The final decision is based on the provided \"Final decision\" record, and all other records are considered provisional.\n\n**Note:** The final",
+      "error": null
+    },
+    {
+      "request": 14,
+      "ttft_ms": 829.5012809999207,
+      "e2e_ms": 5492.098450999947,
+      "prompt_tokens": 1342,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "- Selected Site: Harbor-114  \n- Budget: $174,000  \n- Implementation Window: 34 days\n\n**Note:** The final decision is based on the provided \"Final decision\" record, and all other records are considered preliminary and not included in the summary.",
+      "error": null
+    },
+    {
+      "request": 15,
+      "ttft_ms": 831.7123109998192,
+      "e2e_ms": 5135.862275999898,
+      "prompt_tokens": 1342,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "- Selected Site: Harbor-115  \n- Budget: $175,000  \n- Implementation Window: 35 days\n\n**Note:** The final decision is based on the provided \"Final decision\" record, which specifies the selected site, budget, and implementation window. All other records",
+      "error": null
+    }
+  ]
+}

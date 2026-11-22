@@ -1,0 +1,178 @@
+{
+  "summary": {
+    "workload": "short",
+    "concurrency": 16,
+    "repeat": 0,
+    "requests": 16,
+    "successful": 16,
+    "errors": 0,
+    "elapsed_s": 2.0279417560000184,
+    "ttft_target_ms": 500,
+    "ttft_p50_ms": 194.06227150000177,
+    "ttft_p95_ms": 195.25667875001318,
+    "output_toks_s": 504.9454684634398,
+    "goodput_rps": 7.889772944741247
+  },
+  "rows": [
+    {
+      "request": 0,
+      "ttft_ms": 52.58689799984495,
+      "e2e_ms": 1993.392232999895,
+      "prompt_tokens": 31,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "DNS caching stores recently resolved domain names in a local or network-level cache to reduce lookup time and improve performance. For example, when you visit \"example.com,\" your device stores the IP address in its cache, so future requests to \"example.com\" can be resolved faster without querying the DNS server again.\n\n**",
+      "error": null
+    },
+    {
+      "request": 1,
+      "ttft_ms": 194.57385700002305,
+      "e2e_ms": 2026.4994110000316,
+      "prompt_tokens": 33,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "HTTP keep-alive allows a single TCP connection to be reused for multiple HTTP requests, reducing latency and overhead. For example, a browser can send multiple image requests over the same connection without establishing a new TCP handshake for each.\n\n**Example:** When a browser loads a webpage with multiple images, it can request all",
+      "error": null
+    },
+    {
+      "request": 2,
+      "ttft_ms": 194.5137860000159,
+      "e2e_ms": 2026.3625620000312,
+      "prompt_tokens": 31,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "Database indexing is a method of improving query performance by creating a structured reference to data, similar to an index in a book. For example, an index on a \"customer_id\" column in a \"orders\" table allows the database to quickly locate specific customer records without scanning the entire table.\n\n**Example:**  \n",
+      "error": null
+    },
+    {
+      "request": 3,
+      "ttft_ms": 194.80417699992358,
+      "e2e_ms": 2026.3003740001295,
+      "prompt_tokens": 32,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "Write-ahead logs (WAL) ensure data consistency by recording changes to a database before the actual data is modified, allowing for recovery in case of failures. For example, in a PostgreSQL database, a WAL entry is written before updating a table, so if the system crashes, the change can be replayed from the log",
+      "error": null
+    },
+    {
+      "request": 4,
+      "ttft_ms": 193.8342799999191,
+      "e2e_ms": 2025.0311709999096,
+      "prompt_tokens": 31,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "Binary search is an efficient algorithm for finding an item in a sorted list by repeatedly dividing the search interval in half. For example, if you're searching for the number 15 in a sorted list [5, 10, 15, 20, 25], binary search would first check",
+      "error": null
+    },
+    {
+      "request": 5,
+      "ttft_ms": 195.47035899995535,
+      "e2e_ms": 2026.340035999965,
+      "prompt_tokens": 32,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "TCP congestion control manages network traffic to prevent overload by adjusting data transmission rates based on network conditions. It uses algorithms like slow start and congestion avoidance to ensure reliable data flow. For example, when a TCP sender detects packet loss, it reduces its transmission rate, similar to how a driver slows down when they see a traffic jam",
+      "error": null
+    },
+    {
+      "request": 6,
+      "ttft_ms": 195.18545200003246,
+      "e2e_ms": 2026.1137309998958,
+      "prompt_tokens": 31,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "Connection pools are a mechanism that manages a cache of database connections to improve performance by reusing existing connections instead of creating new ones each time. For example, a web application using a connection pool can reuse a database connection for multiple user requests, reducing overhead and improving response time.\n\n**Example:** A Java web app",
+      "error": null
+    },
+    {
+      "request": 7,
+      "ttft_ms": 194.37337900012608,
+      "e2e_ms": 2025.7128490000014,
+      "prompt_tokens": 32,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "LRU (Least Recently Used) eviction is a cache management strategy that removes the least recently accessed item when space is needed. For example, if a cache holds items A, B, and C, and the most recent access was to B, then if the cache needs to evict an item, it will remove A",
+      "error": null
+    },
+    {
+      "request": 8,
+      "ttft_ms": 194.0879290000339,
+      "e2e_ms": 2025.5024980001508,
+      "prompt_tokens": 31,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "Schema migrations are changes made to the structure of a database to adapt to new requirements or fix issues, ensuring data integrity and system compatibility. For example, adding a new column to a user table to store a user's profile picture URL is a schema migration that updates the database structure without losing existing data.\n\n**Example",
+      "error": null
+    },
+    {
+      "request": 9,
+      "ttft_ms": 193.66903699983595,
+      "e2e_ms": 2025.234841999918,
+      "prompt_tokens": 31,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "Hash partitioning divides data into partitions based on a hash function applied to the partition key, ensuring even distribution across storage nodes. This method optimizes query performance by allowing parallel processing and efficient data retrieval. For example, in a database with user data partitioned by user ID using a hash function, queries on specific user IDs",
+      "error": null
+    },
+    {
+      "request": 10,
+      "ttft_ms": 194.2278650001299,
+      "e2e_ms": 2025.353394000149,
+      "prompt_tokens": 33,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "Idempotency refers to an operation that can be applied multiple times without changing the result beyond the initial application. A concrete example is a HTTP GET request, which can be safely repeated without altering the server's state.\n\n**Example:** Sending a GET request to retrieve data from a web server multiple times will always",
+      "error": null
+    },
+    {
+      "request": 11,
+      "ttft_ms": 193.9413610000429,
+      "e2e_ms": 2025.1390409998749,
+      "prompt_tokens": 31,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "Rate limiting is a technique used to control the number of requests a user can make within a specific time period, preventing abuse and ensuring system stability. For example, a web API might limit a user to 100 requests per hour to prevent denial-of-service attacks.\n\n**Concrete Example:** A social media platform",
+      "error": null
+    },
+    {
+      "request": 12,
+      "ttft_ms": 193.86521799992806,
+      "e2e_ms": 2024.8658420000538,
+      "prompt_tokens": 31,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "Backpressure occurs when a system's output is constrained, causing a buildup of pressure or delay in the flow of data or resources. For example, in a network, if a downstream server can't process data fast enough, it may slow down the upstream data flow, creating backpressure.\n\n**Concrete example:** In",
+      "error": null
+    },
+    {
+      "request": 13,
+      "ttft_ms": 194.03661399996963,
+      "e2e_ms": 2024.9935009999263,
+      "prompt_tokens": 31,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "Thread pools manage a fixed number of threads to efficiently handle multiple tasks, reducing the overhead of creating and destroying threads. For example, a web server uses a thread pool to handle incoming requests concurrently without creating a new thread for each request.\n\n**Example:** A web server uses a thread pool to handle incoming requests concurrently",
+      "error": null
+    },
+    {
+      "request": 14,
+      "ttft_ms": 192.45632599995588,
+      "e2e_ms": 2024.8659430001226,
+      "prompt_tokens": 31,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "A reverse proxy is a server that sits between clients and backend servers, forwarding client requests to the appropriate server and returning the response to the client, often used for load balancing, security, and caching. An example is Nginx, which can act as a reverse proxy to distribute traffic across multiple web servers.\n\n",
+      "error": null
+    },
+    {
+      "request": 15,
+      "ttft_ms": 192.89993300003516,
+      "e2e_ms": 2024.168464000013,
+      "prompt_tokens": 32,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "Quorum reads ensure that a read request in a distributed system only returns data if it has been successfully replicated to a majority of nodes, ensuring consistency and fault tolerance. For example, in a 3-node Cassandra cluster with a quorum read setting of 2, a read request will only return data if it has been",
+      "error": null
+    }
+  ]
+}

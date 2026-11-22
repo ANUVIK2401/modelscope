@@ -9,3 +9,13 @@ __pycache__/
 # number without re-running a GPU job. Only large intermediates are excluded.
 results/**/*.pt
 results/**/*.safetensors
+
+# Secrets. modelscope.txt once held a live HF token and a GitHub PAT in the
+# repo root, one `git add -A` away from being published. Never again.
+modelscope.txt
+*token*.txt
+*secret*
+.env.*
+!.env.example
+.coverage
+htmlcov/

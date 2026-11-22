@@ -119,6 +119,17 @@ def evaluate_variant(variant_key: str, questions: list[dict[str, Any]],
     return row, mmlu["correct_flags"]
 
 
+def _flags_path_for(csv_path: Path) -> Path:
+    """Per-question flags file belonging to a given results CSV.
+
+    Returns the canonical PER_QUESTION_JSON for the default CSV, and a sibling
+    file next to any other CSV, so alternate runs stay isolated.
+    """
+    if Path(csv_path) == QUALITY_CSV:
+        return PER_QUESTION_JSON
+    return Path(csv_path).with_name("per_question_flags.json")
+
+
 def run(variants: list[str], csv_path: Path = QUALITY_CSV,
         resume: bool = True, skip_perplexity: bool = False,
         strict: bool = True) -> None:
@@ -131,9 +142,16 @@ def run(variants: list[str], csv_path: Path = QUALITY_CSV,
           f"{len({q['subject'] for q in questions})} subjects (5-shot, logit-scored)")
 
     done = completed_variants(csv_path) if resume else set()
+
+    # Per-question flags live beside their own CSV, not at a fixed path. A run
+    # writing to an alternate csv_path (the notebook's smoke test) would
+    # otherwise merge its flags into the shared file, and significance.py reads
+    # that file for paired McNemar tests -- seeding the real analysis with rows
+    # of different provenance.
+    flags_path = _flags_path_for(csv_path)
     flags_store: dict[str, list[int]] = {}
-    if PER_QUESTION_JSON.exists():
-        flags_store = json.loads(PER_QUESTION_JSON.read_text())
+    if flags_path.exists():
+        flags_store = json.loads(flags_path.read_text())
 
     verdicts: list[dict[str, Any]] = []
 
@@ -146,7 +164,7 @@ def run(variants: list[str], csv_path: Path = QUALITY_CSV,
             )
             append_row(csv_path, row)
             flags_store[variant_key] = flags
-            PER_QUESTION_JSON.write_text(json.dumps(flags_store))
+            flags_path.write_text(json.dumps(flags_store))
 
             print(f"{variant_key}: MMLU {row['mmlu_accuracy']:.3f} "
                   f"[{row['mmlu_ci_low']:.3f}, {row['mmlu_ci_high']:.3f}], "

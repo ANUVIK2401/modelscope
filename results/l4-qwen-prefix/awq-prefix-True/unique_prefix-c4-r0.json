@@ -1,0 +1,498 @@
+{
+  "summary": {
+    "workload": "unique_prefix",
+    "concurrency": 4,
+    "repeat": 0,
+    "requests": 48,
+    "successful": 48,
+    "errors": 0,
+    "elapsed_s": 41.74765709999997,
+    "ttft_target_ms": 1500,
+    "ttft_p50_ms": 858.7906985000018,
+    "ttft_p95_ms": 1329.75823160005,
+    "output_toks_s": 73.58496771786511,
+    "goodput_rps": 1.1018582405669906
+  },
+  "rows": [
+    {
+      "request": 0,
+      "ttft_ms": 1684.0737290000334,
+      "e2e_ms": 3916.6811559999815,
+      "prompt_tokens": 1318,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 0:**\n\n- **Survey:** 086-00  \n- **Zone Reviewed:** Zone 0  \n- **Focus:** Equipment inventory, scheduling dependencies, and unrelated background events  \n- **Status:** Preliminary observations; not final unless included in the final decision.\n\nLet",
+      "error": null
+    },
+    {
+      "request": 1,
+      "ttft_ms": 671.7132989999754,
+      "e2e_ms": 3440.0046619999785,
+      "prompt_tokens": 1318,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 01:**\n\nRecord 01 reports that the maintenance panel logged survey 087-01, and the onsite team reviewed service tickets from **zone 1**. The preliminary observations focus on **equipment inventory**, **scheduling dependencies**, and **unrelated background events**.",
+      "error": null
+    },
+    {
+      "request": 2,
+      "ttft_ms": 1329.9064930000668,
+      "e2e_ms": 3470.1981550000482,
+      "prompt_tokens": 1318,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 02:**\n\n- **Survey:** 088-02  \n- **Zone Reviewed:** Zone 2  \n- **Focus:** Equipment inventory, scheduling dependencies, and unrelated background events  \n- **Status:** Preliminary observations; final decision is pending  \n\nThis record documents the maintenance panel",
+      "error": null
+    },
+    {
+      "request": 3,
+      "ttft_ms": 1329.482889000019,
+      "e2e_ms": 3469.4953380000015,
+      "prompt_tokens": 1318,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 03:**\n\n- **Survey:** 089-03  \n- **Zone Reviewed:** Zone 3  \n- **Focus:** Equipment inventory, scheduling dependencies, and unrelated background events  \n- **Status:** Preliminary observations; final decision is pending  \n\nThis record documents the maintenance panel",
+      "error": null
+    },
+    {
+      "request": 4,
+      "ttft_ms": 475.8573530000376,
+      "e2e_ms": 3459.246703999952,
+      "prompt_tokens": 1318,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 04:**\n\n- **Survey:** 090-04  \n- **Zone Reviewed:** Zone 4  \n- **Focus Areas:** Equipment inventory, scheduling dependencies, and unrelated background events  \n- **Status:** Preliminary observations; final decision is pending  \n\nThis record documents the maintenance",
+      "error": null
+    },
+    {
+      "request": 5,
+      "ttft_ms": 1081.5059430000247,
+      "e2e_ms": 3459.0035049999415,
+      "prompt_tokens": 1318,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 05:**\n\n- **Survey:** 091-05  \n- **Zone reviewed:** Zone 5  \n- **Focus:** Equipment inventory, scheduling dependencies, and unrelated background events  \n- **Status:** Preliminary observations; final decision is pending  \n\nThis record reflects the onsite team",
+      "error": null
+    },
+    {
+      "request": 6,
+      "ttft_ms": 1672.9491449999614,
+      "e2e_ms": 3902.8185879999455,
+      "prompt_tokens": 1318,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 06:**\n\n- **Survey:** 092-06  \n- **Zone reviewed:** Zone 6  \n- **Focus:** Equipment inventory, scheduling dependencies, and unrelated background events  \n- **Status:** Preliminary observations; final decision is pending  \n\nThis record documents the maintenance panel",
+      "error": null
+    },
+    {
+      "request": 7,
+      "ttft_ms": 1227.602549999915,
+      "e2e_ms": 3457.5588629999174,
+      "prompt_tokens": 1318,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 07:**\n\n- **Survey:** 093-07  \n- **Zone reviewed:** Zone 0  \n- **Focus:** Equipment inventory, scheduling dependencies, and unrelated background events  \n- **Status:** Preliminary observations; final decision is required for confirmation  \n\nThis record reflects the",
+      "error": null
+    },
+    {
+      "request": 8,
+      "ttft_ms": 473.76226200003657,
+      "e2e_ms": 3450.7137049999983,
+      "prompt_tokens": 1318,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 08:**\n\n- **Survey:** 094-08  \n- **Zone reviewed:** Zone 1  \n- **Focus:** Preliminary observations on equipment inventory, scheduling dependencies, and unrelated background events.  \n- **Status:** All observations are provisional and will be finalized only if",
+      "error": null
+    },
+    {
+      "request": 9,
+      "ttft_ms": 860.7829460000858,
+      "e2e_ms": 3450.642032000019,
+      "prompt_tokens": 1318,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 09:**\n\n- **Survey:** 095-09  \n- **Zone Reviewed:** Zone 2  \n- **Focus:** Equipment inventory, scheduling dependencies, and unrelated background events  \n- **Status:** Preliminary observations; not final unless included in the final decision  \n\nThis record",
+      "error": null
+    },
+    {
+      "request": 10,
+      "ttft_ms": 1073.7982539999393,
+      "e2e_ms": 3455.3538619999244,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 10:**\n\nRecord 10 reports that the maintenance panel logged survey 096-10. The onsite team reviewed service tickets from zone 3. The preliminary observations focus on equipment inventory, scheduling dependencies, and unrelated background events. All observations in this record are considered provisional and",
+      "error": null
+    },
+    {
+      "request": 11,
+      "ttft_ms": 1255.4249060000302,
+      "e2e_ms": 3893.991007000068,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 11:**\n\nRecord 11 states that the maintenance panel logged survey 097-11, and the onsite team reviewed service tickets from zone 4. The preliminary observations from this review pertain to equipment inventory, scheduling dependencies, and unrelated background events. It is noted that",
+      "error": null
+    },
+    {
+      "request": 12,
+      "ttft_ms": 478.3852880000268,
+      "e2e_ms": 3516.673196999932,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 12:**\n\nRecord 12 states that the maintenance panel logged survey 098-12, and the onsite team reviewed service tickets from zone 5. The preliminary observations from this survey concern equipment inventory, scheduling dependencies, and unrelated background events. It is noted that all observations",
+      "error": null
+    },
+    {
+      "request": 13,
+      "ttft_ms": 888.0510760000107,
+      "e2e_ms": 3516.7294939999465,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 13:**\n\nRecord 13 states that the maintenance panel logged survey 099-13, and the onsite team reviewed service tickets from zone 5. The preliminary observations from this survey concern equipment inventory, scheduling dependencies, and unrelated background events. All observations are considered provisional and",
+      "error": null
+    },
+    {
+      "request": 14,
+      "ttft_ms": 877.4598079999123,
+      "e2e_ms": 3514.4229300000234,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 14:**\n\n- **Record Number:** 14  \n- **Survey:** 100-14  \n- **Zone Reviewed:** Zone 0  \n- **Activity:** The onsite team reviewed service tickets from zone 0.  \n- **Observations:** The preliminary observations concern",
+      "error": null
+    },
+    {
+      "request": 15,
+      "ttft_ms": 884.2262690000098,
+      "e2e_ms": 3494.3285809999907,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 15:**\n\nRecord 15 states that the maintenance panel logged survey 101-15, and the onsite team reviewed service tickets from zone 1. The preliminary observations from this survey concern equipment inventory, scheduling dependencies, and unrelated background events. It is noted that every observation",
+      "error": null
+    },
+    {
+      "request": 16,
+      "ttft_ms": 476.13745400008156,
+      "e2e_ms": 3471.370210000032,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 16:**\n\n- **Survey:** 102-16  \n- **Zone reviewed:** Zone 2  \n- **Action:** The onsite team reviewed service tickets from zone 2.  \n- **Focus areas:** Equipment inventory, scheduling dependencies, and unrelated background events.  \n-",
+      "error": null
+    },
+    {
+      "request": 17,
+      "ttft_ms": 865.6422039999825,
+      "e2e_ms": 3472.6891689999775,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 17:**\n\nRecord 17 states that the maintenance panel logged survey 103-17, and the onsite team reviewed service tickets from zone 3. The preliminary observations from this review concern equipment inventory, scheduling dependencies, and unrelated background events. It is noted that every observation",
+      "error": null
+    },
+    {
+      "request": 18,
+      "ttft_ms": 843.0224329999874,
+      "e2e_ms": 3472.889513000041,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 18:**\n\nRecord 18 states that the maintenance panel logged survey 104-18, and the onsite team reviewed service tickets from zone 4. The preliminary observations from this review pertain to equipment inventory, scheduling dependencies, and unrelated background events. It is noted that",
+      "error": null
+    },
+    {
+      "request": 19,
+      "ttft_ms": 856.2479839999924,
+      "e2e_ms": 3484.686713999963,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 19:**\n\nRecord 19 indicates that the maintenance panel logged survey 105-19, and the onsite team reviewed service tickets from zone 5. The preliminary observations from this review pertain to equipment inventory, scheduling dependencies, and unrelated background events. It is noted that",
+      "error": null
+    },
+    {
+      "request": 20,
+      "ttft_ms": 477.66954300004727,
+      "e2e_ms": 3505.449997000028,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 20:**\n\nRecord 20 indicates that the maintenance panel logged survey 106-20, and the onsite team reviewed service tickets from zone 6. The preliminary observations from this review pertain to equipment inventory, scheduling dependencies, and unrelated background events. It is noted that",
+      "error": null
+    },
+    {
+      "request": 21,
+      "ttft_ms": 877.5731130000395,
+      "e2e_ms": 3504.1359890000194,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 21:**\n\nRecord 21 states that the maintenance panel logged survey 107-21, and the onsite team reviewed service tickets from zone 0. The preliminary observations from this review pertain to equipment inventory, scheduling dependencies, and unrelated background events. It is noted that",
+      "error": null
+    },
+    {
+      "request": 22,
+      "ttft_ms": 864.5699570000716,
+      "e2e_ms": 3508.576018000099,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Summary of Record 22:**\n\n- **Survey:** 108-22  \n- **Zone reviewed:** Zone 1  \n- **Action:** The onsite team reviewed service tickets from zone 1.  \n- **Focus:** The preliminary observations pertain to equipment inventory, scheduling dependencies, and unrelated",
+      "error": null
+    },
+    {
+      "request": 23,
+      "ttft_ms": 874.7845380000854,
+      "e2e_ms": 3510.426446999986,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "**Record 23.** The maintenance panel logged survey 109-23. The onsite team reviewed service tickets from zone 2. These preliminary observations concern equipment inventory, scheduling dependencies and unrelated background events. Every observation below is provisional unless included in the final decision.\n\n**Summary:**  \nRecord",
+      "error": null
+    },
+    {
+      "request": 24,
+      "ttft_ms": 480.80086899994967,
+      "e2e_ms": 3502.055231999975,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "The provided text does not include **Record 24**. The last record listed is **Record 22**, which states:\n\n**Record 22.** The maintenance panel logged survey 110-22. The onsite team reviewed service tickets from zone 1. These preliminary observations concern equipment inventory",
+      "error": null
+    },
+    {
+      "request": 25,
+      "ttft_ms": 883.9242220000187,
+      "e2e_ms": 3502.109142999984,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "There is no \"Record 25\" in the provided data. The last record listed is **Record 22**, which corresponds to **survey 111-22** and involves a review of service tickets from **zone 1**. \n\nIf you meant to refer to a different record or need",
+      "error": null
+    },
+    {
+      "request": 26,
+      "ttft_ms": 860.0814489999493,
+      "e2e_ms": 3493.3705250000457,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "The provided text does not include **Record 26**. The last record listed is **Record 22**, which states:\n\n**Record 22.** The maintenance panel logged survey 112-22. The onsite team reviewed service tickets from zone 1. These preliminary observations concern equipment inventory",
+      "error": null
+    },
+    {
+      "request": 27,
+      "ttft_ms": 869.0476819999731,
+      "e2e_ms": 3481.004268999982,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "The provided text does not include **Record 27**. The last record listed is **Record 22**, which states:\n\n**Record 22.** The maintenance panel logged survey 113-22. The onsite team reviewed service tickets from zone 1. These preliminary observations concern equipment inventory",
+      "error": null
+    },
+    {
+      "request": 28,
+      "ttft_ms": 472.06888400000935,
+      "e2e_ms": 3456.1316799999986,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "The provided text does not include **Record 28**. The last record listed is **Record 22**, which states:\n\n**Record 22.** The maintenance panel logged survey 114-22. The onsite team reviewed service tickets from zone 1. These preliminary observations concern equipment inventory",
+      "error": null
+    },
+    {
+      "request": 29,
+      "ttft_ms": 862.8284689999646,
+      "e2e_ms": 3456.150445999924,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "The provided text does not include **Record 29**. The last record listed is **Record 22**, which states:\n\n**Record 22.** The maintenance panel logged survey 115-22. The onsite team reviewed service tickets from zone 1. These preliminary observations concern equipment inventory",
+      "error": null
+    },
+    {
+      "request": 30,
+      "ttft_ms": 834.4742360000055,
+      "e2e_ms": 3455.3096920000144,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "There is no \"Record 30\" in the provided text. The records listed go up to \"Record 22,\" and there is no mention of a Record 30. If you meant a different record or have additional information, please clarify.\n\n**Note:** If you intended to ask about a",
+      "error": null
+    },
+    {
+      "request": 31,
+      "ttft_ms": 842.9197979999117,
+      "e2e_ms": 3450.8316529999092,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "There is no \"Record 31\" in the provided data. The records listed go up to \"Record 22.\" If you meant to refer to a different record or need information about the final decision, please clarify.\n\n**Final Decision Summary:**\n- **Selected Site:** Harbor-217",
+      "error": null
+    },
+    {
+      "request": 32,
+      "ttft_ms": 471.28262299997914,
+      "e2e_ms": 3469.8011169999745,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "There is no \"Record 32\" in the provided data. The records listed go up to \"Record 22.\" If you meant a different record or have additional information, please clarify.\n\n**Note:** If you intended to ask about a different record or there was a typo, please provide more details",
+      "error": null
+    },
+    {
+      "request": 33,
+      "ttft_ms": 857.4999480000542,
+      "e2e_ms": 3469.7802839999667,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "There is no \"Record 33\" in the provided data. The records listed go up to \"Record 22,\" and there is no mention of a Record 33. If you meant a different record or have additional information, please clarify.\n\n**Note:** If you intended to refer to a",
+      "error": null
+    },
+    {
+      "request": 34,
+      "ttft_ms": 838.8874089999945,
+      "e2e_ms": 3467.253416999938,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "There is no \"Record 34\" in the provided data. The records listed go up to \"Record 22.\" If you meant a different record or have additional information, please clarify.\n\n**Note:** If you intended to refer to a different record or there was a typo, please provide more context",
+      "error": null
+    },
+    {
+      "request": 35,
+      "ttft_ms": 862.4065989999963,
+      "e2e_ms": 3467.0501870000408,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "There is no \"Record 35\" in the provided data. The records listed go up to \"Record 22.\" If you meant a different record or have additional information, please clarify.\n\n**Note:** If you intended to refer to a different record or there was a typo, please provide more context",
+      "error": null
+    },
+    {
+      "request": 36,
+      "ttft_ms": 468.68857699996624,
+      "e2e_ms": 3441.813044000014,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "There is no \"Record 36\" in the provided data. The records listed go up to \"Record 22,\" and there is no mention of a Record 36. If you meant a different record or have additional information, please clarify.\n\n**Note:** The final decision was made for \"",
+      "error": null
+    },
+    {
+      "request": 37,
+      "ttft_ms": 854.7616680000374,
+      "e2e_ms": 3441.6847129999724,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "There is no \"Record 37\" in the provided data. The records listed go up to \"Record 22,\" and there is no mention of a Record 37. If you meant a different record or have additional information, please clarify.\n\n**Answer:**  \nThere is no \"Record ",
+      "error": null
+    },
+    {
+      "request": 38,
+      "ttft_ms": 831.1326110000437,
+      "e2e_ms": 3440.1679009999953,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "There is no \"Record 38\" in the provided data. The records listed go up to \"Record 22.\" If you meant a different record or have additional information, please clarify.\n\n**Note:** If you intended to refer to a different record or there was a typo, please provide more context",
+      "error": null
+    },
+    {
+      "request": 39,
+      "ttft_ms": 840.2306579999959,
+      "e2e_ms": 3442.1435010000323,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "There is no \"Record 39\" in the provided data. The records listed go up to \"Record 22.\" If you meant a different record or have additional information, please clarify.\n\n**Note:** If you intended to refer to a different record or there was a typo, please provide more context",
+      "error": null
+    },
+    {
+      "request": 40,
+      "ttft_ms": 467.08854299993163,
+      "e2e_ms": 3464.163141999961,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "There is no \"Record 40\" in the provided data. The records listed go up to \"Record 22,\" and the final decision is made after these records. If you meant to refer to a different record or need information about the final decision, please clarify.\n\n**Final Decision Summary:**\n",
+      "error": null
+    },
+    {
+      "request": 41,
+      "ttft_ms": 855.2260769999975,
+      "e2e_ms": 3464.1642880000063,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "There is no \"Record 41\" in the provided data. The records listed go up to \"Record 22,\" and there is no mention of a Record 41. If you meant a different record or have additional information, please clarify.\n\n**Answer:**  \nThere is no \"Record ",
+      "error": null
+    },
+    {
+      "request": 42,
+      "ttft_ms": 839.5825610000429,
+      "e2e_ms": 3471.589215999984,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "There is no \"Record 42\" in the provided data. The records listed go up to \"Record 22,\" and there is no mention of a Record 42. If you meant a different record or have additional information, please clarify.\n\n**Answer:**  \nThere is no Record 4",
+      "error": null
+    },
+    {
+      "request": 43,
+      "ttft_ms": 861.52222599992,
+      "e2e_ms": 3480.995972999949,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "There is no \"Record 43\" in the provided data. The records listed go up to \"Record 22,\" and there is no mention of a Record 43. If you meant a different record or have additional information, please clarify.\n\n**Answer:**  \nThere is no \"Record ",
+      "error": null
+    },
+    {
+      "request": 44,
+      "ttft_ms": 474.4647979999854,
+      "e2e_ms": 3485.053093000033,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "There is no \"Record 44\" in the provided data. The records listed go up to \"Record 22.\" If you meant a different record or have additional information, please clarify.\n\n**Note:** If you intended to refer to a different record or there was a typo, please provide more context",
+      "error": null
+    },
+    {
+      "request": 45,
+      "ttft_ms": 872.0449559999679,
+      "e2e_ms": 3484.162830999935,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "There is no \"Record 45\" in the provided data. The records listed go up to \"Record 22.\" If you meant a different record or have additional information, please clarify.\n\n**Note:** If you intended to refer to a different record or there was a typo, please provide more context",
+      "error": null
+    },
+    {
+      "request": 46,
+      "ttft_ms": 848.225178000007,
+      "e2e_ms": 3067.4298399999316,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "There is no \"Record 46\" in the provided data. The records listed go up to \"Record 22.\" If you meant a different record or have additional information, please clarify.\n\n**Note:** If you intended to refer to a different record or there was a typo, please provide more context",
+      "error": null
+    },
+    {
+      "request": 47,
+      "ttft_ms": 863.7862829999676,
+      "e2e_ms": 2667.0429700000113,
+      "prompt_tokens": 1319,
+      "output_tokens": 64,
+      "finish_reason": "length",
+      "text": "There is no Record 47 in the provided information. The records listed go up to Record 22. If you meant a different record or have additional information, please clarify.\n\n**Final Answer:**  \nThere is no Record 47 in the provided data. The available records are numbered from 0",
+      "error": null
+    }
+  ]
+}
