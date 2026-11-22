@@ -15,7 +15,7 @@ number happens to be.
 ```bash
 python -m venv venv && source venv/bin/activate
 pip install -r requirements-dev.txt
-pytest                       # 112 tests, CPU-only, no GPU required
+pytest                       # 113 tests, CPU-only, no GPU required
 ruff check . --exclude venv
 ```
 

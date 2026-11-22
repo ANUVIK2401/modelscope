@@ -11,7 +11,7 @@
 [![Coverage](https://img.shields.io/badge/coverage-64.5%25%20(CPU--only)-yellow.svg)](CONTRIBUTING.md)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 
-[**Run it**](#run-it) · [**The hypothesis**](#the-mechanism-under-test) · [**What broke**](#what-this-project-fixed-about-itself) · [**Paper**](paper/paper.md) · [**Limits**](#limitations)
+[**Run it**](#run-it) · [**The hypothesis**](#the-mechanism-under-test) · [**What broke**](#what-this-project-fixed-about-itself) · [**Limits**](#limitations)
 
 </div>
 
@@ -89,7 +89,9 @@ Three things before you press run:
 Then run §0.4, the **six-minute smoke test**. It pushes one variant through every stage.
 If something is misconfigured you find out in six minutes rather than at minute ninety.
 
-| Stage | Wall clock | Resumable |
+Wall-clock figures are planning estimates, not measured in the saved results.
+
+| Stage | Est. wall clock | Resumable |
 |---|---|---|
 | §0.4 Smoke test — one variant, all stages | ~6 min | — |
 | §1 Harness verification — FP16 vs published MMLU | ~4 min | — |
@@ -123,7 +125,7 @@ that cheapness is the practical claim, so it is worth running on its own.
 
 ```bash
 pip install -r requirements-dev.txt
-pytest                             # 112 tests, CPU-only, no GPU, no downloads
+pytest                             # 113 tests, CPU-only, no GPU, no downloads
 ```
 
 The notebook imports these same modules. It does not redefine them — see the retraction
@@ -140,18 +142,18 @@ for the other 63. That yields two falsifiable predictions:
 **H1** — layers with heavier-tailed weights suffer more reconstruction error.
 
 **H2** — NF4's normal-quantile levels help *more* where tails are heavier.
-**This one is false.** NF4 beats FP4 nearly everywhere, but its margin *shrinks*
-monotonically as tails thicken: +12.7% at excess kurtosis 0.1, +1.0% at kurtosis 164.
-NF4 places its levels at the quantiles of a *normal*, so a heavy tail is exactly where that
-prior is wrong. An earlier version confirmed H2 only because it modelled FP4 as a uniform
-4-bit grid; FP4 is E2M1, geometrically spaced.
+**Open, and probably false.** NF4 places its levels at the quantiles of a *normal*, so a
+heavy tail is where that prior should be weakest. An earlier version confirmed H2 only
+because it modelled FP4 as a uniform 4-bit grid; FP4 is E2M1, geometrically spaced.
+No sensitivity results are committed in this repository, so neither the earlier margin
+figures nor a corrected H2 verdict are claimed here.
 
 Both are tested in [research/sensitivity.py](research/sensitivity.py), validated
 **leave-one-model-family-out** — train on Llama layers, predict Gemma layers — because that
 is the only split that answers *"does this transfer to a model I haven't benchmarked?"*
 
-Held-out predictor R² is **pending a run**; the number lands in
-[results/sensitivity_report.json](results/) and reaches prose only through
+Held-out predictor R² is **pending a run**; the number will land in
+`results/sensitivity_report.json` (not yet committed) and reach prose only through
 `scripts/build_report.py`.
 
 ---
@@ -173,9 +175,9 @@ reverted.
 | `int4` vs `int4_nf4` naming | Read as "4-bit" vs "4-bit, better". bitsandbytes defaults to **fp4**, so these are two different formats — the comparison was unreadable | Variants renamed `fp4` / `nf4` ([models/configs.py](models/configs.py)) |
 | Consistency defined two ways under one column | One version used greedy decoding, making the metric constant 1.0 by construction | Single definition: mean pairwise ROUGE-L under sampling ([eval/consistency.py](eval/consistency.py)) |
 | `except Exception: continue` | Failed variants left no trace; resume logic retried forever, Pareto ran over a silent subset | Failures recorded with `status="failed"` and the error ([benchmarks/runner.py](benchmarks/runner.py)) |
-| Two parallel implementations, one written as string literals from a notebook cell | Every published number came from the **untested** path | One implementation, imported everywhere; 112 tests in CI |
+| Two parallel implementations, one written as string literals from a notebook cell | Every published number came from the **untested** path | One implementation, imported everywhere; 113 tests in CI |
 | `recommend.py` read a `relevance_score` column | Nothing ever produced it — raised on real data | Column removed; quality floor now relative to FP16 baseline |
-| FP4 modelled as a uniform 15-level grid | FP4 is **E2M1** — floating point, geometrically spaced. The stand-in flattered FP4 on flat distributions and **flipped the sign of H2**, the study's own headline hypothesis | Real E2M1 codebook derived from the bit fields ([research/sensitivity.py](research/sensitivity.py)); H2 now rejected |
+| FP4 modelled as a uniform 15-level grid | FP4 is **E2M1** — floating point, geometrically spaced. The stand-in flattered FP4 on flat distributions and **flipped the sign of H2**, the study's own headline hypothesis | Real E2M1 codebook derived from the bit fields ([research/sensitivity.py](research/sensitivity.py)); H2 re-opened pending a committed run |
 | Batch sizes `[1,4,16,32]` declared but unused | Every throughput number was batch 1, the least deployment-relevant setting | Batched throughput + KV-cache memory measured ([benchmarks/throughput.py](benchmarks/throughput.py)) |
 | Per-question flags written to a fixed path regardless of target CSV | A smoke-test run would merge its flags into the shared file that `significance.py` reads, seeding paired McNemar tests with rows of different provenance | Flags file derived from `csv_path` ([eval/harness.py](eval/harness.py)) |
 
@@ -184,7 +186,7 @@ faster per MB"*, *"INT4 strictly beats INT8"*, and this project's own **H2** all
 the defects above.
 
 H2 is the sharpest case: the hypothesis was confirmed by a reference implementation that
-modelled FP4 as something FP4 is not, and it reverses against the real codebook. The first
+modelled FP4 as something FP4 is not, so that confirmation is void. The first
 two claims are unsupported. The third is likely a T4-specific artifact of the LLM.int8()
 path on hardware without wide INT8 tensor cores, and is not claimed to generalize.
 
@@ -209,8 +211,8 @@ research/     sensitivity.py weight stats + quantization error
               predictor.py   cross-family validation
 serve/        api.py         FastAPI inference layer + Prometheus metrics
 scripts/      build_report.py  the only path from CSV to prose
-paper/        paper.md         workshop-format writeup
-tests/        112 tests, CPU-only, run in CI
+paper/        paper.md         unfinished draft; result fields still [TBD]
+tests/        113 tests, CPU-only, run in CI
 ```
 
 Output paths come from [analysis/paths.py](analysis/paths.py). Nothing hardcodes
@@ -230,7 +232,7 @@ Stated here because a reviewer will find them regardless.
   calibration data and may rank configurations differently.
 - **Reconstruction error is a proxy.** The link from layer-level error to end-task accuracy
   is assumed, not established. Closing that gap is the main open item.
-- **Two families, one scale band.** Two points show transfer is possible, not its shape.
+- **Two families, one scale band.** Two points cannot show whether transfer holds, or its shape.
 - **Statistical power.** At n=320, gaps below 0.111 accuracy are unresolvable and are
   reported as indistinguishable rather than as small effects.
 
